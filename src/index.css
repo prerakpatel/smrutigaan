@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-marble text-ink font-ui antialiased;
+  }
+}
+
+@layer components {
+  /* The "haldi swipe": a slightly skewed saffron wash behind a highlighted line. */
+  .haldi {
+    background-image: linear-gradient(
+      100deg,
+      transparent 0%,
+      rgba(222, 138, 31, 0.28) 3%,
+      rgba(222, 138, 31, 0.22) 92%,
+      transparent 100%
+    );
+    border-radius: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
