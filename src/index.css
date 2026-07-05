@@ -5,9 +5,21 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* no grey flash on tap — we show our own active states instead */
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-marble text-ink font-ui antialiased;
+    /* no rubber-band pull-to-refresh inside the app shell */
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
+  }
+  button {
+    touch-action: manipulation;
+  }
+  /* remove WebKit's default clear button; we render our own */
+  input[type='search']::-webkit-search-cancel-button {
+    -webkit-appearance: none;
   }
 }
 
@@ -23,6 +35,53 @@
     );
     border-radius: 2px;
   }
+}
+
+@layer utilities {
+  /* iPhone notch / home-indicator safe areas */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* room for the fixed bottom tab bar */
+  .pb-tabbar {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Native-feeling transitions: pages slide in from the right,
+   sheets slide up from the bottom. */
+@keyframes page-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+.animate-page-in {
+  animation: page-in 0.28s cubic-bezier(0.32, 0.72, 0.35, 1);
+}
+.animate-sheet-up {
+  animation: sheet-up 0.32s cubic-bezier(0.32, 0.72, 0.35, 1);
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

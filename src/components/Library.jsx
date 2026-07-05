@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { buildHaystack, matchesQuery } from '../lib/text'
+import { Heart, Plus, SearchIcon, X, ChevronRight } from './icons'
 
-export default function Library({ state, actions, script, onOpen }) {
+export default function Library({ state, actions, script, onOpen, onAdd }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -25,65 +26,119 @@ export default function Library({ state, actions, script, onOpen }) {
 
   return (
     <div>
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search Gujarati or transliteration…"
-        className="w-full rounded-xl border border-hairline bg-white px-4 py-3 font-gujarati text-base outline-none transition-shadow placeholder:font-ui placeholder:text-stone focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
-      />
-
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-        <Chip active={favoritesOnly} onClick={() => setFavoritesOnly((f) => !f)}>
-          ♥ Favorites
-        </Chip>
-        {categories.map((c) => (
-          <Chip key={c} active={category === c} onClick={() => setCategory(category === c ? null : c)}>
-            {c}
-          </Chip>
-        ))}
+      {/* Large title row — scrolls away like a native large-title header */}
+      <div className="pt-safe px-4">
+        <div className="flex items-end justify-between pt-4">
+          <div>
+            <h1 className="font-display text-[28px] font-semibold leading-none tracking-tight">
+              Smruti <span className="text-saffron-deep">Gaan</span>
+            </h1>
+            <p className="mt-1.5 text-[11px] uppercase tracking-[0.18em] text-stone">
+              Hariprabodham
+            </p>
+          </div>
+          <button
+            onClick={onAdd}
+            aria-label="Add kirtan"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-marble shadow-sm transition-transform active:scale-95"
+          >
+            <Plus size={22} sw={2} />
+          </button>
+        </div>
       </div>
 
-      <p className="mt-4 text-xs uppercase tracking-[0.15em] text-stone">
-        {results.length} of {state.kirtans.length} kirtans
-      </p>
-
-      <ul className="mt-2 divide-y divide-hairline">
-        {results.map((k) => {
-          const fav = state.favorites.includes(k.id)
-          const hasNotes = !!state.annotations[k.id]?.note ||
-            Object.keys(state.annotations[k.id]?.lines || {}).length > 0
-          return (
-            <li key={k.id} className="flex items-center gap-3 py-3">
-              <button onClick={() => onOpen(k.id)} className="min-w-0 flex-1 text-left">
-                <p className="truncate font-gujarati text-lg leading-snug">
-                  {script === 'gu' ? k.title.gu || k.title.en : k.title.en || k.title.gu}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-stone">
-                  {script === 'gu' ? k.title.en : k.title.gu}
-                  {hasNotes && <span className="ml-2 text-madder">· annotated</span>}
-                </p>
-              </button>
-              <button
-                onClick={() => actions.toggleFavorite(k.id)}
-                aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
-                className={`px-2 text-lg transition-colors ${fav ? 'text-madder' : 'text-hairline hover:text-stone'}`}
-              >
-                ♥
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-
-      {results.length === 0 && (
-        <div className="mt-10 text-center text-sm text-stone">
-          <p>No kirtans match this search.</p>
-          <p className="mt-1">Try fewer words, or search in the other script.</p>
+      {/* Search + filters stay pinned while the list scrolls */}
+      <div className="sticky top-0 z-10 bg-marble/95 px-4 pb-2 pt-3 backdrop-blur">
+        <div className="relative">
+          <SearchIcon
+            size={18}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone"
+          />
+          <input
+            type="search"
+            inputMode="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search Gujarati or English…"
+            className="w-full rounded-full border border-hairline bg-white py-3 pl-10 pr-10 font-gujarati text-base outline-none transition-shadow placeholder:font-ui placeholder:text-stone focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              aria-label="Clear search"
+              className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-stone active:text-ink"
+            >
+              <X size={16} sw={2} />
+            </button>
+          )}
         </div>
-      )}
 
-      <ImportExport actions={actions} />
+        <div className="no-scrollbar -mx-4 mt-2.5 flex gap-2 overflow-x-auto px-4 pb-0.5 text-[13px]">
+          <Chip active={favoritesOnly} onClick={() => setFavoritesOnly((f) => !f)}>
+            <Heart size={13} filled={favoritesOnly} className="mr-1 inline-block align-[-1px]" />
+            Favorites
+          </Chip>
+          {categories.map((c) => (
+            <Chip
+              key={c}
+              active={category === c}
+              onClick={() => setCategory(category === c ? null : c)}
+            >
+              {c}
+            </Chip>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-4">
+        <p className="mt-2 text-[11px] uppercase tracking-[0.15em] text-stone">
+          {results.length} of {state.kirtans.length} kirtans
+        </p>
+
+        <ul className="mt-1 divide-y divide-hairline">
+          {results.map((k) => {
+            const fav = state.favorites.includes(k.id)
+            const hasNotes =
+              !!state.annotations[k.id]?.note ||
+              Object.keys(state.annotations[k.id]?.lines || {}).length > 0
+            return (
+              <li key={k.id} className="flex items-center">
+                <button
+                  onClick={() => onOpen(k.id)}
+                  className="-ml-2 flex min-w-0 flex-1 items-center gap-2 rounded-xl py-3.5 pl-2 pr-1 text-left transition-colors active:bg-parchment"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-gujarati text-lg leading-snug">
+                      {script === 'gu' ? k.title.gu || k.title.en : k.title.en || k.title.gu}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-stone">
+                      {script === 'gu' ? k.title.en : k.title.gu}
+                      {hasNotes && <span className="ml-2 text-madder">· annotated</span>}
+                    </span>
+                  </span>
+                  <ChevronRight size={16} className="shrink-0 text-hairline" />
+                </button>
+                <button
+                  onClick={() => actions.toggleFavorite(k.id)}
+                  aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center transition-colors ${
+                    fav ? 'text-madder' : 'text-hairline active:text-stone'
+                  }`}
+                >
+                  <Heart size={20} filled={fav} />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+
+        {results.length === 0 && (
+          <div className="mt-14 text-center text-sm text-stone">
+            <p>No kirtans match this search.</p>
+            <p className="mt-1">Try fewer words, or search in the other script.</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -92,55 +147,13 @@ function Chip({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-3 py-1 transition-colors ${
+      className={`shrink-0 select-none whitespace-nowrap rounded-full border px-3.5 py-1.5 transition-colors ${
         active
-          ? 'border-saffron-deep bg-saffron-soft text-ink'
-          : 'border-hairline bg-white text-stone hover:border-stone'
+          ? 'border-saffron-deep bg-saffron-soft font-medium text-ink'
+          : 'border-hairline bg-white text-stone active:border-stone'
       }`}
     >
       {children}
     </button>
-  )
-}
-
-function ImportExport({ actions }) {
-  const download = () => {
-    const blob = new Blob([actions.exportJSON()], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'smruti-gaan-export.json'
-    a.click()
-    URL.revokeObjectURL(a.href)
-  }
-  const upload = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    file.text().then((t) => {
-      try {
-        actions.importJSON(t)
-      } catch {
-        alert('That file is not a valid Smruti Gaan export.')
-      }
-    })
-    e.target.value = ''
-  }
-  return (
-    <div className="mt-12 flex items-center gap-4 border-t border-hairline pt-4 text-xs text-stone">
-      <button onClick={download} className="underline underline-offset-2 hover:text-ink">
-        Export library
-      </button>
-      <label className="cursor-pointer underline underline-offset-2 hover:text-ink">
-        Import library
-        <input type="file" accept="application/json" onChange={upload} className="hidden" />
-      </label>
-      <button
-        onClick={() => {
-          if (confirm('Discard local edits and reload the seed data?')) actions.resetToSeed()
-        }}
-        className="ml-auto underline underline-offset-2 hover:text-madder"
-      >
-        Reset to seed
-      </button>
-    </div>
   )
 }

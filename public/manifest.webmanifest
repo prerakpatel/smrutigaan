@@ -1,0 +1,16 @@
+{
+  "name": "Smruti Gaan",
+  "short_name": "Smruti Gaan",
+  "description": "Bhajan and kirtan lyrics of Hariprabodham — Gujarati and English transliteration, searchable, with highlights and notes.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8F5EE",
+  "theme_color": "#F8F5EE",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

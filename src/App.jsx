@@ -1,95 +1,207 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from './lib/store'
 import Library from './components/Library'
 import KirtanView from './components/KirtanView'
 import Editor from './components/Editor'
-import Playlists from './components/Playlists'
+import Playlists, { PlaylistDetail } from './components/Playlists'
+import Settings from './components/Settings'
+import { BookOpen, Music, Cog } from './components/icons'
 
-// view: {name:'library'} | {name:'kirtan',id} | {name:'edit',id|null} | {name:'playlists'}
+const PREFS_KEY = 'smruti-gaan:prefs'
+
+function loadPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}
+  } catch {
+    return {}
+  }
+}
+
+const TABS = [
+  { key: 'library', label: 'Library', Icon: BookOpen },
+  { key: 'playlists', label: 'Playlists', Icon: Music },
+  { key: 'settings', label: 'Settings', Icon: Cog },
+]
+
+// Navigation model: three always-mounted tab panels (so scroll position and
+// search state survive tab switches) plus a page stack that slides full-screen
+// pages in on top, mirrored into browser history so the Android back button
+// and iOS edge-swipe-back both work.
 export default function App() {
   const { state, actions } = useStore()
-  const [view, setView] = useState({ name: 'library' })
-  const [script, setScript] = useState('gu') // global script preference
+  const [tab, setTab] = useState('library')
+  const [stack, setStack] = useState([]) // [{name:'kirtan'|'playlist'|'edit', id}]
+  const [script, setScriptState] = useState(() => loadPrefs().script || 'gu')
+  const [fontScale, setFontScaleState] = useState(() => loadPrefs().fontScale || 1)
 
-  const go = (v) => setView(v)
+  const prefs = useRef({ script, fontScale })
+  const savePrefs = (patch) => {
+    prefs.current = { ...prefs.current, ...patch }
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs.current))
+    } catch {}
+  }
+  const setScript = (s) => {
+    setScriptState(s)
+    savePrefs({ script: s })
+  }
+  const setFontScale = (f) => {
+    setFontScaleState(f)
+    savePrefs({ fontScale: f })
+  }
+
+  const stackRef = useRef(stack)
+  stackRef.current = stack
+
+  useEffect(() => {
+    const onPop = (e) => {
+      const depth = e.state?.depth || 0
+      setStack((s) => (depth < s.length ? s.slice(0, depth) : s))
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const push = (view) => {
+    const depth = stackRef.current.length + 1
+    setStack((s) => [...s, view])
+    window.history.pushState({ depth }, '')
+  }
+  const back = () => window.history.back()
+  const backTwice = () => window.history.go(-2)
+  const replaceTop = (view) => setStack((s) => [...s.slice(0, -1), view])
+
+  const openTab = (key) => {
+    if (stackRef.current.length > 0) {
+      window.history.go(-stackRef.current.length)
+      setStack([])
+    } else if (key === tab) {
+      // native pattern: re-tapping the active tab scrolls it back to the top
+      document.getElementById(`panel-${key}`)?.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    setTab(key)
+  }
+
+  const openKirtan = (id) => push({ name: 'kirtan', id })
 
   return (
-    <div className="mx-auto min-h-screen max-w-2xl">
-      <header className="sticky top-0 z-20 border-b border-hairline bg-marble/95 px-4 pb-3 pt-4 backdrop-blur">
-        <div className="flex items-center justify-between">
-          <button onClick={() => go({ name: 'library' })} className="text-left">
-            <h1 className="font-display text-xl font-semibold tracking-tight">
-              Smruti <span className="text-saffron-deep">Gaan</span>
-            </h1>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-stone">Hariprabodham</p>
-          </button>
-          <nav className="flex items-center gap-1 text-sm">
-            <NavButton active={view.name === 'library'} onClick={() => go({ name: 'library' })}>
-              Library
-            </NavButton>
-            <NavButton active={view.name === 'playlists'} onClick={() => go({ name: 'playlists' })}>
-              Playlists
-            </NavButton>
-            <button
-              onClick={() => go({ name: 'edit', id: null })}
-              className="ml-1 rounded-full bg-ink px-3 py-1.5 text-marble transition-colors hover:bg-madder"
-            >
-              + Add
-            </button>
-          </nav>
-        </div>
-      </header>
+    <div className="relative h-dvh">
+      <TabPanel id="panel-library" active={tab === 'library'}>
+        <Library
+          state={state}
+          actions={actions}
+          script={script}
+          onOpen={openKirtan}
+          onAdd={() => push({ name: 'edit', id: null })}
+        />
+      </TabPanel>
+      <TabPanel id="panel-playlists" active={tab === 'playlists'}>
+        <Playlists
+          state={state}
+          actions={actions}
+          script={script}
+          onOpenPlaylist={(id) => push({ name: 'playlist', id })}
+        />
+      </TabPanel>
+      <TabPanel id="panel-settings" active={tab === 'settings'}>
+        <Settings
+          state={state}
+          actions={actions}
+          script={script}
+          setScript={setScript}
+          fontScale={fontScale}
+          setFontScale={setFontScale}
+        />
+      </TabPanel>
 
-      <main className="px-4 pb-24 pt-4">
-        {view.name === 'library' && (
-          <Library
-            state={state}
-            actions={actions}
-            script={script}
-            onOpen={(id) => go({ name: 'kirtan', id })}
-          />
-        )}
-        {view.name === 'kirtan' && (
-          <KirtanView
-            state={state}
-            actions={actions}
-            id={view.id}
-            script={script}
-            setScript={setScript}
-            onEdit={() => go({ name: 'edit', id: view.id })}
-            onBack={() => go({ name: 'library' })}
-          />
-        )}
-        {view.name === 'edit' && (
-          <Editor
-            state={state}
-            actions={actions}
-            id={view.id}
-            onDone={(id) => go(id ? { name: 'kirtan', id } : { name: 'library' })}
-          />
-        )}
-        {view.name === 'playlists' && (
-          <Playlists
-            state={state}
-            actions={actions}
-            script={script}
-            onOpen={(id) => go({ name: 'kirtan', id })}
-          />
-        )}
-      </main>
+      {/* Page stack */}
+      {stack.map((v, i) => (
+        <div
+          key={`${v.name}-${v.id ?? 'new'}-${i}`}
+          className={`animate-page-in fixed inset-0 overflow-y-auto overscroll-contain bg-marble ${
+            v.name === 'edit' ? 'z-[60]' : 'z-30 pb-tabbar'
+          }`}
+        >
+          {v.name === 'kirtan' && (
+            <KirtanView
+              state={state}
+              actions={actions}
+              id={v.id}
+              script={script}
+              setScript={setScript}
+              fontScale={fontScale}
+              setFontScale={setFontScale}
+              onEdit={() => push({ name: 'edit', id: v.id })}
+              onBack={back}
+            />
+          )}
+          {v.name === 'playlist' && (
+            <PlaylistDetail
+              state={state}
+              actions={actions}
+              id={v.id}
+              script={script}
+              onOpen={openKirtan}
+              onBack={back}
+            />
+          )}
+          {v.name === 'edit' && (
+            <Editor
+              state={state}
+              actions={actions}
+              id={v.id}
+              onCancel={back}
+              onSaved={(savedId) => {
+                if (v.id) back()
+                else replaceTop({ name: 'kirtan', id: savedId })
+              }}
+              onDeleted={() => {
+                // the kirtan page beneath is gone too — pop both
+                if (stackRef.current.length >= 2) backTwice()
+                else back()
+              }}
+            />
+          )}
+        </div>
+      ))}
+
+      {/* Bottom tab bar */}
+      <nav className="pb-safe fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-marble/95 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl">
+          {TABS.map(({ key, label, Icon }) => {
+            const active = key === tab && stack.length === 0
+            return (
+              <button
+                key={key}
+                onClick={() => openTab(key)}
+                className={`flex min-h-[56px] flex-1 select-none flex-col items-center justify-center gap-1 pt-1.5 transition-colors ${
+                  active ? 'text-saffron-deep' : 'text-stone active:text-ink'
+                }`}
+              >
+                <Icon size={24} sw={active ? 2.1 : 1.8} />
+                <span className={`text-[10px] leading-none ${active ? 'font-semibold' : ''}`}>
+                  {label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
     </div>
   )
 }
 
-function NavButton({ active, onClick, children }) {
+// Kept mounted and merely hidden so each tab retains its scroll position,
+// like native tab controllers do.
+function TabPanel({ id, active, children }) {
   return (
-    <button
-      onClick={onClick}
-      className={`rounded-full px-3 py-1.5 transition-colors ${
-        active ? 'bg-parchment font-medium text-ink' : 'text-stone hover:text-ink'
+    <div
+      id={id}
+      className={`pb-tabbar absolute inset-0 overflow-y-auto overscroll-contain ${
+        active ? '' : 'invisible pointer-events-none'
       }`}
     >
-      {children}
-    </button>
+      <div className="mx-auto max-w-2xl">{children}</div>
+    </div>
   )
 }
