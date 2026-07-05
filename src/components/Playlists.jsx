@@ -155,7 +155,7 @@ export function PlaylistDetail({ state, actions, id, script, onOpen, onBack }) {
                     onClick={() => onOpen(kid)}
                     className="-ml-2 min-w-0 flex-1 rounded-xl py-3.5 pl-2 text-left transition-colors active:bg-parchment"
                   >
-                    <span className="block truncate font-gujarati text-lg leading-snug">
+                    <span className="block truncate font-lyrics text-lg leading-snug">
                       {script === 'gu' ? k.title.gu || k.title.en : k.title.en || k.title.gu}
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-stone">

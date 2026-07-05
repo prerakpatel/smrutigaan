@@ -60,7 +60,7 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search Gujarati or English…"
-            className="w-full rounded-full border border-hairline bg-white py-3 pl-10 pr-10 font-gujarati text-base outline-none transition-shadow placeholder:font-ui placeholder:text-stone focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
+            className="w-full rounded-full border border-hairline bg-white py-3 pl-10 pr-10 font-lyrics text-base outline-none transition-shadow placeholder:font-ui placeholder:text-stone focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
           />
           {query && (
             <button
@@ -108,7 +108,7 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
                   className="-ml-2 flex min-w-0 flex-1 items-center gap-2 rounded-xl py-3.5 pl-2 pr-1 text-left transition-colors active:bg-parchment"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-gujarati text-lg leading-snug">
+                    <span className="block truncate font-lyrics text-lg leading-snug">
                       {script === 'gu' ? k.title.gu || k.title.en : k.title.en || k.title.gu}
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-stone">

@@ -67,7 +67,7 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
 
         {/* Live extracted titles */}
         <div className="mt-3 rounded-xl border border-hairline bg-parchment/60 p-3 text-sm">
-          <p className="font-gujarati text-base">
+          <p className="font-lyrics text-base">
             {titleGu || <span className="text-stone">Gujarati title will appear here</span>}
           </p>
           <p className="mt-0.5 text-stone">{titleEn || 'Transliterated title will appear here'}</p>
@@ -88,7 +88,7 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
             onChange={(e) => setGu(e.target.value)}
             rows={14}
             placeholder={'પહેલી પંક્તિ = શીર્ષક\n\nપછી અંતરા, ખાલી લીટીથી અલગ…'}
-            className="mt-3 w-full rounded-xl border border-hairline bg-white p-4 font-gujarati text-lg leading-loose outline-none focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
+            className="mt-3 w-full rounded-xl border border-hairline bg-white p-4 font-lyrics text-lg leading-loose outline-none focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
           />
         ) : (
           <textarea
@@ -96,7 +96,7 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
             onChange={(e) => setEn(e.target.value)}
             rows={14}
             placeholder={'First line = title\n\nThen verses, separated by blank lines…'}
-            className="mt-3 w-full rounded-xl border border-hairline bg-white p-4 font-gujarati text-lg leading-loose outline-none focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
+            className="mt-3 w-full rounded-xl border border-hairline bg-white p-4 font-lyrics text-lg leading-loose outline-none focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
           />
         )}
 
@@ -134,7 +134,7 @@ function TabButton({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`min-h-[40px] flex-1 select-none rounded-lg font-gujarati transition-all ${
+      className={`min-h-[40px] flex-1 select-none rounded-lg font-lyrics transition-all ${
         active ? 'bg-white font-medium text-ink shadow-sm' : 'text-stone'
       }`}
     >

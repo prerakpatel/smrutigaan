@@ -67,7 +67,7 @@ export default function Settings({ state, actions, script, setScript, fontScale,
               </button>
             </div>
           </Row>
-          <p className="px-4 pb-3 pt-1 font-gujarati leading-relaxed text-stone" style={{ fontSize: `${1.125 * fontScale}rem` }}>
+          <p className="px-4 pb-3 pt-1 font-lyrics leading-relaxed text-stone" style={{ fontSize: `${1.125 * fontScale}rem` }}>
             જય સ્વામિનારાયણ · Jay Swaminarayan
           </p>
         </Section>
@@ -157,7 +157,7 @@ function Seg({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`min-h-[36px] select-none rounded-md px-3.5 font-gujarati transition-all ${
+      className={`min-h-[36px] select-none rounded-md px-3.5 font-lyrics transition-all ${
         active ? 'bg-white font-medium text-ink shadow-sm' : 'text-stone'
       }`}
     >

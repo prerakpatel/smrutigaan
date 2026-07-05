@@ -19,7 +19,12 @@ export default {
       fontFamily: {
         display: ['Fraunces', 'Georgia', 'serif'],
         ui: ['Inter', 'system-ui', 'sans-serif'],
-        gujarati: ['"Noto Serif Gujarati"', 'serif'],
+        // Lyrics stack, resolved per glyph: Latin (transliteration, digits,
+        // diacritics like ā/ṇ/ś) renders in Noto Serif — large x-height, open
+        // letterforms, easy to read at a glance while singing — and Gujarati
+        // falls through to its sibling Noto Serif Gujarati, so both scripts
+        // share identical weight and contrast when flipping mid-kirtan.
+        lyrics: ['"Noto Serif"', '"Noto Serif Gujarati"', 'Georgia', 'serif'],
       },
     },
   },

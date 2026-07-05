@@ -79,7 +79,7 @@ export default function KirtanView({
           >
             <ChevronLeft size={26} sw={2} />
           </button>
-          <p className="min-w-0 flex-1 truncate px-1 text-center font-gujarati text-[15px] font-medium">
+          <p className="min-w-0 flex-1 truncate px-1 text-center font-lyrics text-[15px] font-medium">
             {title}
           </p>
           <button
@@ -103,7 +103,7 @@ export default function KirtanView({
 
       <div className="px-5">
         <header className="mt-3">
-          <h2 className="font-display font-gujarati text-[26px] font-semibold leading-snug">
+          <h2 className="font-display font-lyrics text-[26px] font-semibold leading-snug">
             {title}
           </h2>
           <p className="mt-1 text-sm text-stone">
@@ -140,7 +140,7 @@ export default function KirtanView({
         {/* Lyrics: tap a line to highlight it, tap ✎ for a note.
             Annotations key off line index, shared across both scripts. */}
         <div
-          className="mt-6 font-gujarati leading-loose"
+          className="mt-6 font-lyrics leading-loose"
           style={{ fontSize: `${1.125 * fontScale}rem` }}
         >
           {lines.map((l) =>
@@ -265,7 +265,7 @@ function ScriptTab({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`min-h-[40px] flex-1 select-none rounded-lg font-gujarati transition-all ${
+      className={`min-h-[40px] flex-1 select-none rounded-lg font-lyrics transition-all ${
         active ? 'bg-white font-medium text-ink shadow-sm' : 'text-stone'
       }`}
     >
@@ -315,7 +315,7 @@ function NoteSheet({ title, subtitle, placeholder, initial, onDone }) {
   return (
     <Sheet open onClose={() => onDone(text)} title={title}>
       {subtitle && (
-        <p className="mb-2 truncate border-l-2 border-saffron pl-3 font-gujarati text-sm text-stone">
+        <p className="mb-2 truncate border-l-2 border-saffron pl-3 font-lyrics text-sm text-stone">
           {subtitle}
         </p>
       )}
