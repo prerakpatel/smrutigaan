@@ -36,16 +36,16 @@
     background-clip: text;
     color: transparent;
   }
-  /* Highlighted lyric line: a soft neon wash with a glowing left edge. */
+  /* Highlighted lyric line: a bold neon wash with a glowing left edge. */
   .glow {
     background-image: linear-gradient(
       100deg,
-      rgba(139, 92, 246, 0.3) 0%,
-      rgba(217, 70, 239, 0.14) 70%,
-      transparent 100%
+      rgba(139, 92, 246, 0.5) 0%,
+      rgba(217, 70, 239, 0.3) 55%,
+      rgba(217, 70, 239, 0.12) 100%
     );
     border-radius: 6px;
-    box-shadow: inset 2.5px 0 0 #a78bfa;
+    box-shadow: inset 3px 0 0 #c4b5fd;
   }
 }
 
