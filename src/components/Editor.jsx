@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { extractTitle, newId } from '../lib/text'
-import { Trash } from './icons'
+import { saveAudio, deleteAudio } from '../lib/audioStore'
+import { Music, Trash } from './icons'
 
 // Full-screen modal editor (covers the tab bar), native "Cancel / Save" style.
 export default function Editor({ state, actions, id, onCancel, onSaved, onDeleted }) {
@@ -8,6 +9,8 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
   const [gu, setGu] = useState(existing?.lyrics.gu || '')
   const [en, setEn] = useState(existing?.lyrics.en || '')
   const [categories, setCategories] = useState((existing?.categories || []).join(', '))
+  const [audio, setAudio] = useState(existing?.audio || null)
+  const [audioUrl, setAudioUrl] = useState('')
   const [tab, setTab] = useState('gu')
 
   const titleGu = extractTitle(gu)
@@ -28,8 +31,30 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
         .split(',')
         .map((c) => c.trim())
         .filter(Boolean),
+      audio: audio || (audioUrl.trim() ? { url: audioUrl.trim() } : null),
     })
     onSaved(kid)
+  }
+
+  const attachFile = async (e) => {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    if (!f) return
+    const blobId = newId()
+    try {
+      await saveAudio(blobId, f)
+    } catch {
+      alert('Could not store the audio file on this device.')
+      return
+    }
+    if (audio?.blobId) deleteAudio(audio.blobId).catch(() => {})
+    setAudio({ blobId, name: f.name })
+  }
+
+  const removeAudio = () => {
+    if (audio?.blobId) deleteAudio(audio.blobId).catch(() => {})
+    setAudio(null)
+    setAudioUrl('')
   }
 
   const remove = () => {
@@ -109,6 +134,37 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
             className="mt-1 w-full rounded-xl bg-card px-3 py-3 text-base outline-none focus:ring-2 focus:ring-accent/70"
           />
         </label>
+
+        <div className="mt-4">
+          <span className="text-[11px] uppercase tracking-[0.15em] text-muted">
+            Audio (optional)
+          </span>
+          {audio ? (
+            <div className="mt-1 flex items-center gap-3 rounded-xl bg-card px-3 py-3">
+              <Music size={18} className="shrink-0 text-accent-bright" />
+              <span className="min-w-0 flex-1 truncate text-sm">
+                {audio.name || audio.url}
+              </span>
+              <button onClick={removeAudio} className="shrink-0 text-sm font-medium text-punch">
+                Remove
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                value={audioUrl}
+                onChange={(e) => setAudioUrl(e.target.value)}
+                inputMode="url"
+                placeholder="Paste an audio URL (mp3, m4a…)"
+                className="mt-1 w-full rounded-xl bg-card px-3 py-3 text-base outline-none focus:ring-2 focus:ring-accent/70"
+              />
+              <label className="mt-2 flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border border-dashed border-line text-sm text-muted active:bg-surface">
+                …or upload an audio file (stays on this device)
+                <input type="file" accept="audio/*" onChange={attachFile} className="hidden" />
+              </label>
+            </>
+          )}
+        </div>
 
         <p className="mt-4 text-xs leading-relaxed text-muted">
           Tip: keep the Gujarati and transliteration line-for-line parallel (same number of lines

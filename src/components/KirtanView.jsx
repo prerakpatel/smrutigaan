@@ -5,7 +5,9 @@ import {
   ChevronLeft,
   Heart,
   Ellipsis,
+  Pause,
   Pencil,
+  Play,
   Plus,
   ShareIcon,
   Check,
@@ -21,6 +23,7 @@ export default function KirtanView({
   setScript,
   fontScale,
   setFontScale,
+  player,
   onEdit,
   onBack,
 }) {
@@ -105,24 +108,41 @@ export default function KirtanView({
       </div>
 
       <div className="px-5">
-        <header className="mt-4">
-          <h2 className="font-lyrics text-[30px] font-extrabold leading-tight tracking-tight">
-            {title}
-          </h2>
-          <p className="mt-1.5 text-sm font-medium text-snow/60">
-            {script === 'gu' ? kirtan.title.en : kirtan.title.gu}
-          </p>
-          {(kirtan.categories || []).length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {kirtan.categories.map((c) => (
-                <span
-                  key={c}
-                  className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-snow/80"
-                >
-                  {c}
-                </span>
-              ))}
-            </div>
+        <header className="mt-4 flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="font-lyrics text-[30px] font-extrabold leading-tight tracking-tight">
+              {title}
+            </h2>
+            <p className="mt-1.5 text-sm font-medium text-snow/60">
+              {script === 'gu' ? kirtan.title.en : kirtan.title.gu}
+            </p>
+            {(kirtan.categories || []).length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {kirtan.categories.map((c) => (
+                  <span
+                    key={c}
+                    className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-snow/80"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          {kirtan.audio && (
+            <button
+              onClick={() => player.playKirtan(id)}
+              aria-label={
+                player.current === id && player.playing ? 'Pause audio' : 'Play audio'
+              }
+              className="grad-brand mb-0.5 flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-lg shadow-fuchsia-500/30 transition-transform active:scale-95"
+            >
+              {player.current === id && player.playing ? (
+                <Pause size={24} />
+              ) : (
+                <Play size={24} className="ml-0.5" />
+              )}
+            </button>
           )}
         </header>
 

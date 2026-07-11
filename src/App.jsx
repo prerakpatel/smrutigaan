@@ -5,6 +5,7 @@ import KirtanView from './components/KirtanView'
 import Editor from './components/Editor'
 import Playlists, { PlaylistDetail } from './components/Playlists'
 import Settings from './components/Settings'
+import { usePlayer, MiniPlayer, FullPlayer } from './components/Player'
 import { BookOpen, Music, Cog } from './components/icons'
 
 const PREFS_KEY = 'smruti-gaan:prefs'
@@ -29,6 +30,7 @@ const TABS = [
 // and iOS edge-swipe-back both work.
 export default function App() {
   const { state, actions } = useStore()
+  const player = usePlayer(state.kirtans)
   const [tab, setTab] = useState('library')
   const [stack, setStack] = useState([]) // [{name:'kirtan'|'playlist'|'edit', id}]
   const [script, setScriptState] = useState(() => loadPrefs().script || 'gu')
@@ -83,10 +85,19 @@ export default function App() {
   }
 
   const openKirtan = (id) => push({ name: 'kirtan', id })
+  // From the player: jump to the playing kirtan's lyrics unless already there.
+  const openLyricsFor = (id) => {
+    const top = stackRef.current[stackRef.current.length - 1]
+    if (top?.name === 'kirtan' && top.id === id) return
+    push({ name: 'kirtan', id })
+  }
+
+  // Extra bottom padding on every scrolling page while the mini player is docked.
+  const padBottom = player.current ? 'pb-tabbar-mini' : 'pb-tabbar'
 
   return (
     <div className="relative h-dvh">
-      <TabPanel id="panel-library" active={tab === 'library'}>
+      <TabPanel id="panel-library" active={tab === 'library'} padBottom={padBottom}>
         <Library
           state={state}
           actions={actions}
@@ -95,7 +106,7 @@ export default function App() {
           onAdd={() => push({ name: 'edit', id: null })}
         />
       </TabPanel>
-      <TabPanel id="panel-playlists" active={tab === 'playlists'}>
+      <TabPanel id="panel-playlists" active={tab === 'playlists'} padBottom={padBottom}>
         <Playlists
           state={state}
           actions={actions}
@@ -103,7 +114,7 @@ export default function App() {
           onOpenPlaylist={(id) => push({ name: 'playlist', id })}
         />
       </TabPanel>
-      <TabPanel id="panel-settings" active={tab === 'settings'}>
+      <TabPanel id="panel-settings" active={tab === 'settings'} padBottom={padBottom}>
         <Settings
           state={state}
           actions={actions}
@@ -119,7 +130,7 @@ export default function App() {
         <div
           key={`${v.name}-${v.id ?? 'new'}-${i}`}
           className={`animate-page-in fixed inset-0 overflow-y-auto overscroll-contain bg-night ${
-            v.name === 'edit' ? 'z-[60]' : 'z-30 pb-tabbar'
+            v.name === 'edit' ? 'z-[60]' : `z-30 ${padBottom}`
           }`}
         >
           {v.name === 'kirtan' && (
@@ -131,6 +142,7 @@ export default function App() {
               setScript={setScript}
               fontScale={fontScale}
               setFontScale={setFontScale}
+              player={player}
               onEdit={() => push({ name: 'edit', id: v.id })}
               onBack={back}
             />
@@ -141,6 +153,7 @@ export default function App() {
               actions={actions}
               id={v.id}
               script={script}
+              player={player}
               onOpen={openKirtan}
               onBack={back}
             />
@@ -164,6 +177,12 @@ export default function App() {
           )}
         </div>
       ))}
+
+      {/* Persistent audio player: mini bar above the tabs, full-screen when expanded */}
+      {player.current && !player.expanded && <MiniPlayer player={player} script={script} />}
+      {player.current && player.expanded && (
+        <FullPlayer player={player} script={script} onOpenLyrics={openLyricsFor} />
+      )}
 
       {/* Bottom tab bar */}
       <nav className="pb-safe fixed inset-x-0 bottom-0 z-50 border-t border-white/5 bg-night/85 backdrop-blur-xl">
@@ -193,11 +212,11 @@ export default function App() {
 
 // Kept mounted and merely hidden so each tab retains its scroll position,
 // like native tab controllers do.
-function TabPanel({ id, active, children }) {
+function TabPanel({ id, active, padBottom, children }) {
   return (
     <div
       id={id}
-      className={`pb-tabbar absolute inset-0 overflow-y-auto overscroll-contain ${
+      className={`${padBottom} absolute inset-0 overflow-y-auto overscroll-contain ${
         active ? '' : 'invisible pointer-events-none'
       }`}
     >

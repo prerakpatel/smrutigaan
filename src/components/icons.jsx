@@ -119,3 +119,36 @@ export const Minus = (p) => (
     <path d="M5 12h14" />
   </I>
 )
+
+export const ChevronDown = (p) => (
+  <I {...p}>
+    <polyline points="6 9 12 15 18 9" />
+  </I>
+)
+
+export const Play = (p) => (
+  <I {...p} filled>
+    <polygon points="6 3.5 20 12 6 20.5 6 3.5" stroke="none" />
+  </I>
+)
+
+export const Pause = (p) => (
+  <I {...p} filled>
+    <rect x="5.5" y="4" width="4.5" height="16" rx="1.2" stroke="none" />
+    <rect x="14" y="4" width="4.5" height="16" rx="1.2" stroke="none" />
+  </I>
+)
+
+export const SkipBack = (p) => (
+  <I {...p} filled>
+    <polygon points="19 20 9 12 19 4 19 20" stroke="none" />
+    <rect x="4" y="4" width="2.4" height="16" rx="1" stroke="none" />
+  </I>
+)
+
+export const SkipForward = (p) => (
+  <I {...p} filled>
+    <polygon points="5 4 15 12 5 20 5 4" stroke="none" />
+    <rect x="17.6" y="4" width="2.4" height="16" rx="1" stroke="none" />
+  </I>
+)

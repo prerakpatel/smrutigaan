@@ -61,6 +61,10 @@
   .pb-tabbar {
     padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
+  /* …and for the mini player docked above it */
+  .pb-tabbar-mini {
+    padding-bottom: calc(76px + 66px + env(safe-area-inset-bottom, 0px));
+  }
   .no-scrollbar {
     scrollbar-width: none;
   }
@@ -94,6 +98,62 @@
 }
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
+}
+
+/* Seek bar: thin track (filled portion painted via inline gradient), round white thumb. */
+.player-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+.player-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #f6f5fa;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+.player-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 9999px;
+  background: #f6f5fa;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* Mini-player equalizer bars */
+.eq span {
+  width: 3px;
+  border-radius: 9999px;
+  background: #fff;
+  transform-origin: 50% 100%;
+  animation: eq 1.1s ease-in-out infinite;
+}
+.eq span:nth-child(1) {
+  height: 55%;
+}
+.eq span:nth-child(2) {
+  height: 100%;
+  animation-delay: 0.25s;
+}
+.eq span:nth-child(3) {
+  height: 70%;
+  animation-delay: 0.5s;
+}
+@keyframes eq {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

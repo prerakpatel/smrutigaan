@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react'
 import seed from '../data/kirtans.json'
 import { newId } from './text'
+import { deleteAudio } from './audioStore'
 
 const STORAGE_KEY = 'smruti-gaan:v1'
 
@@ -61,6 +62,8 @@ export function useStore() {
     },
     deleteKirtan(id) {
       update((s) => {
+        const gone = s.kirtans.find((k) => k.id === id)
+        if (gone?.audio?.blobId) deleteAudio(gone.audio.blobId).catch(() => {})
         s.kirtans = s.kirtans.filter((k) => k.id !== id)
         s.favorites = s.favorites.filter((f) => f !== id)
         s.playlists.forEach((p) => (p.kirtanIds = p.kirtanIds.filter((k) => k !== id)))

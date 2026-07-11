@@ -1,6 +1,17 @@
 import { useState } from 'react'
 import Sheet, { SheetRow } from './Sheet'
-import { ChevronLeft, ChevronRight, Ellipsis, Music, Pencil, Plus, Trash, X } from './icons'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Ellipsis,
+  Music,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  Trash,
+  X,
+} from './icons'
 
 export default function Playlists({ state, actions, script, onOpenPlaylist }) {
   const [creating, setCreating] = useState(false)
@@ -82,11 +93,14 @@ export default function Playlists({ state, actions, script, onOpenPlaylist }) {
 }
 
 // Full-screen playlist page, pushed onto the navigation stack.
-export function PlaylistDetail({ state, actions, id, script, onOpen, onBack }) {
+export function PlaylistDetail({ state, actions, id, script, player, onOpen, onBack }) {
   const [showActions, setShowActions] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const playlist = state.playlists.find((p) => p.id === id)
   const kirtanById = new Map(state.kirtans.map((k) => [k.id, k]))
+  // The playable queue: playlist order, kirtans that actually have audio.
+  const audioIds = (playlist?.kirtanIds || []).filter((kid) => kirtanById.get(kid)?.audio)
+  const queuePlaying = player.playing && audioIds.includes(player.current)
 
   if (!playlist) {
     return (
@@ -133,15 +147,27 @@ export function PlaylistDetail({ state, actions, id, script, onOpen, onBack }) {
           <span className="grad-brand flex h-16 w-16 items-center justify-center rounded-2xl text-white shadow-lg shadow-fuchsia-500/25">
             <Music size={28} />
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="font-display text-2xl font-extrabold leading-tight tracking-tight">
               {playlist.name}
             </h2>
             <p className="text-xs text-muted">
               {playlist.kirtanIds.length}{' '}
               {playlist.kirtanIds.length === 1 ? 'kirtan' : 'kirtans'}
+              {audioIds.length > 0 && ` · ${audioIds.length} with audio`}
             </p>
           </div>
+          {audioIds.length > 0 && (
+            <button
+              onClick={() =>
+                queuePlaying ? player.toggle() : player.playKirtan(audioIds[0], audioIds)
+              }
+              aria-label={queuePlaying ? 'Pause playlist' : 'Play playlist'}
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-snow text-night shadow-lg transition-transform active:scale-95"
+            >
+              {queuePlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
+            </button>
+          )}
         </div>
 
         {playlist.kirtanIds.length === 0 ? (
@@ -160,7 +186,11 @@ export function PlaylistDetail({ state, actions, id, script, onOpen, onBack }) {
                     onClick={() => onOpen(kid)}
                     className="-ml-2 min-w-0 flex-1 rounded-xl py-3.5 pl-2 text-left transition-colors active:bg-surface"
                   >
-                    <span className="block truncate font-lyrics text-[17px] font-medium leading-snug">
+                    <span
+                      className={`block truncate font-lyrics text-[17px] font-medium leading-snug ${
+                        kid === player.current ? 'text-accent-bright' : ''
+                      }`}
+                    >
                       {script === 'gu' ? k.title.gu || k.title.en : k.title.en || k.title.gu}
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-muted">

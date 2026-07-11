@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { buildHaystack, matchesQuery } from '../lib/text'
-import { Heart, Plus, SearchIcon, X, ChevronRight } from './icons'
+import { Heart, Music, Plus, SearchIcon, X, ChevronRight } from './icons'
 
 export default function Library({ state, actions, script, onOpen, onAdd }) {
   const [query, setQuery] = useState('')
@@ -112,6 +112,9 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
                       {script === 'gu' ? k.title.gu || k.title.en : k.title.en || k.title.gu}
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-muted">
+                      {k.audio && (
+                        <Music size={11} className="mr-1.5 inline align-[-1px] text-accent-bright" />
+                      )}
                       {script === 'gu' ? k.title.en : k.title.gu}
                       {hasNotes && <span className="ml-2 text-punch">· annotated</span>}
                     </span>
