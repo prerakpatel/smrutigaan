@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { buildHaystack, matchesQuery, findLineMatches } from '../lib/text'
-import { Heart, Music, Plus, SearchIcon, X, ChevronRight } from './icons'
+import { Heart, Music, SearchIcon, X, ChevronRight } from './icons'
 
-export default function Library({ state, actions, script, onOpen, onAdd }) {
+export default function Library({ state, actions, script, onOpen }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -28,22 +28,13 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
     <div>
       {/* Large title row — scrolls away like a native large-title header */}
       <div className="pt-safe px-4">
-        <div className="flex items-end justify-between pt-4">
-          <div>
-            <h1 className="font-display text-[32px] font-extrabold leading-none tracking-tight">
-              Smruti <span className="text-grad">Gaan</span>
-            </h1>
-            <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.18em] text-muted">
-              Hariprabodham
-            </p>
-          </div>
-          <button
-            onClick={onAdd}
-            aria-label="Add kirtan"
-            className="grad-brand flex h-11 w-11 items-center justify-center rounded-full text-white shadow-lg shadow-fuchsia-500/25 transition-transform active:scale-95"
-          >
-            <Plus size={22} sw={2} />
-          </button>
+        <div className="pt-4">
+          <h1 className="font-display text-[32px] font-extrabold leading-none tracking-tight">
+            Smruti <span className="text-grad">Gaan</span>
+          </h1>
+          <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.18em] text-muted">
+            Hariprabodham
+          </p>
         </div>
       </div>
 

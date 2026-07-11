@@ -40,6 +40,13 @@ function save(state) {
   }
 }
 
+function stampAndPrune(s, kirtanId) {
+  const a = s.annotations[kirtanId]
+  if (!a) return
+  if (!a.note && Object.keys(a.lines).length === 0) delete s.annotations[kirtanId]
+  else a.updatedAt = new Date().toISOString()
+}
+
 export function useStore() {
   const [state, setState] = useState(load)
 
@@ -116,12 +123,28 @@ export function useStore() {
     },
 
     // ---- annotations ----
+    // Every mutation stamps updatedAt (drives "recently annotated" sorting in
+    // the Notes tab) and prunes empty entries so annotated counts stay honest.
     toggleHighlight(kirtanId, lineIndex) {
       update((s) => {
         const a = (s.annotations[kirtanId] ||= { note: '', lines: {} })
         const line = (a.lines[lineIndex] ||= { highlight: false, note: '' })
         line.highlight = !line.highlight
         if (!line.highlight && !line.note) delete a.lines[lineIndex]
+        stampAndPrune(s, kirtanId)
+        return s
+      })
+    },
+    // Bulk highlight/unhighlight — used for whole stanzas.
+    setHighlights(kirtanId, lineIndices, on) {
+      update((s) => {
+        const a = (s.annotations[kirtanId] ||= { note: '', lines: {} })
+        for (const i of lineIndices) {
+          const line = (a.lines[i] ||= { highlight: false, note: '' })
+          line.highlight = on
+          if (!line.highlight && !line.note) delete a.lines[i]
+        }
+        stampAndPrune(s, kirtanId)
         return s
       })
     },
@@ -131,6 +154,7 @@ export function useStore() {
         const line = (a.lines[lineIndex] ||= { highlight: false, note: '' })
         line.note = note
         if (!line.highlight && !line.note) delete a.lines[lineIndex]
+        stampAndPrune(s, kirtanId)
         return s
       })
     },
@@ -138,6 +162,7 @@ export function useStore() {
       update((s) => {
         const a = (s.annotations[kirtanId] ||= { note: '', lines: {} })
         a.note = note
+        stampAndPrune(s, kirtanId)
         return s
       })
     },

@@ -3,7 +3,9 @@ import { toLines } from '../lib/text'
 import Sheet, { SheetRow } from './Sheet'
 import {
   ChevronLeft,
+  Copy,
   Heart,
+  Highlighter,
   Ellipsis,
   Pause,
   Pencil,
@@ -29,6 +31,7 @@ export default function KirtanView({
   onBack,
 }) {
   const kirtan = state.kirtans.find((k) => k.id === id)
+  const [actionLine, setActionLine] = useState(null) // line index with the action sheet open
   const [lineSheet, setLineSheet] = useState(null) // line index with an open note sheet
   const [showActions, setShowActions] = useState(false)
   const [showPlaylists, setShowPlaylists] = useState(false)
@@ -69,21 +72,47 @@ export default function KirtanView({
   const lines = toLines(kirtan.lyrics[script] || kirtan.lyrics.gu || kirtan.lyrics.en)
   const otherScriptMissing = !kirtan.lyrics[script]
 
-  const share = async () => {
-    setShowActions(false)
-    const text = `${title}\n\n${(kirtan.lyrics[script] || kirtan.lyrics.gu || kirtan.lyrics.en || '')
-      .replace(/^#+\s*/gm, '')
-      .trim()}`
+  const plainLyrics = `${title}\n\n${(
+    kirtan.lyrics[script] ||
+    kirtan.lyrics.gu ||
+    kirtan.lyrics.en ||
+    ''
+  )
+    .replace(/^#+\s*/gm, '')
+    .trim()}`
+  const highlightedText = () =>
+    `${title}\n\n${lines
+      .filter((l) => l.type === 'line' && ann.lines[l.index]?.highlight)
+      .map((l) => l.text)
+      .join('\n')}`
+  const hasHighlights = lines.some((l) => l.type === 'line' && ann.lines[l.index]?.highlight)
+
+  const shareText = async (text) => {
     if (navigator.share) {
       try {
         await navigator.share({ title, text })
       } catch {}
     } else {
-      try {
-        await navigator.clipboard.writeText(text)
-        alert('Lyrics copied to clipboard.')
-      } catch {}
+      await copyText(text)
     }
+  }
+  const copyText = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      alert('Copied to clipboard.')
+    } catch {}
+  }
+
+  // All lyric-line indices in the stanza containing `idx` (bounded by blank
+  // lines) — powers highlight-the-whole-antara.
+  const stanzaOf = (idx) => {
+    const pos = lines.findIndex((l) => l.type === 'line' && l.index === idx)
+    if (pos === -1) return [idx]
+    let s = pos
+    while (s > 0 && lines[s - 1].type === 'line') s--
+    let e = pos
+    while (e < lines.length - 1 && lines[e + 1].type === 'line') e++
+    return lines.slice(s, e + 1).map((l) => l.index)
   }
 
   return (
@@ -179,8 +208,9 @@ export default function KirtanView({
           </p>
         )}
 
-        {/* Lyrics: tap a line to highlight it, tap ✎ for a note.
-            Annotations key off line index, shared across both scripts. */}
+        {/* Lyrics: tap a line for its action sheet (highlight, stanza,
+            note, copy, share). Annotations key off line index, shared
+            across both scripts. */}
         <div
           className="mt-7 font-lyrics font-semibold leading-[1.75]"
           style={{ fontSize: `${1.25 * fontScale}rem` }}
@@ -195,8 +225,7 @@ export default function KirtanView({
                 domId={`kline-${id}-${l.index}`}
                 flash={flashLine === l.index}
                 annotation={ann.lines[l.index]}
-                onToggleHighlight={() => actions.toggleHighlight(id, l.index)}
-                onOpenNote={() => setLineSheet(l.index)}
+                onTap={() => setActionLine(l.index)}
               />
             )
           )}
@@ -243,9 +272,35 @@ export default function KirtanView({
         >
           Edit lyrics
         </SheetRow>
-        <SheetRow icon={<ShareIcon size={20} />} onClick={share}>
+        <SheetRow
+          icon={<ShareIcon size={20} />}
+          onClick={() => {
+            setShowActions(false)
+            shareText(plainLyrics)
+          }}
+        >
           Share
         </SheetRow>
+        <SheetRow
+          icon={<Copy size={20} />}
+          onClick={() => {
+            setShowActions(false)
+            copyText(plainLyrics)
+          }}
+        >
+          Copy lyrics
+        </SheetRow>
+        {hasHighlights && (
+          <SheetRow
+            icon={<Highlighter size={20} />}
+            onClick={() => {
+              setShowActions(false)
+              shareText(highlightedText())
+            }}
+          >
+            Share highlighted lines
+          </SheetRow>
+        )}
         <div className="mt-1 flex min-h-[48px] items-center gap-3 rounded-xl px-3 py-2.5">
           <span className="text-base">Text size</span>
           <div className="ml-auto flex items-center gap-1 rounded-full bg-card">
@@ -274,6 +329,70 @@ export default function KirtanView({
       <Sheet open={showPlaylists} onClose={() => setShowPlaylists(false)} title="Add to playlist">
         <PlaylistPicker state={state} actions={actions} kirtanId={id} />
       </Sheet>
+
+      {/* Line action sheet — tap any lyric line to get here */}
+      {actionLine !== null &&
+        (() => {
+          const line = lines.find((l) => l.type === 'line' && l.index === actionLine)
+          const la = ann.lines[actionLine]
+          const stanza = stanzaOf(actionLine)
+          const stanzaLit = stanza.every((i) => ann.lines[i]?.highlight)
+          const close = () => setActionLine(null)
+          return (
+            <Sheet open onClose={close}>
+              <p className="mb-2 truncate border-l-2 border-accent pl-3 font-lyrics text-sm text-muted">
+                {line?.text}
+              </p>
+              <SheetRow
+                icon={<Highlighter size={20} />}
+                onClick={() => {
+                  actions.toggleHighlight(id, actionLine)
+                  close()
+                }}
+              >
+                {la?.highlight ? 'Remove highlight' : 'Highlight line'}
+              </SheetRow>
+              {stanza.length > 1 && (
+                <SheetRow
+                  icon={<Highlighter size={20} />}
+                  onClick={() => {
+                    actions.setHighlights(id, stanza, !stanzaLit)
+                    close()
+                  }}
+                >
+                  {stanzaLit ? 'Remove stanza highlight' : 'Highlight whole stanza'}
+                </SheetRow>
+              )}
+              <SheetRow
+                icon={<Pencil size={20} />}
+                onClick={() => {
+                  close()
+                  setLineSheet(actionLine)
+                }}
+              >
+                {la?.note ? 'Edit note' : 'Add note'}
+              </SheetRow>
+              <SheetRow
+                icon={<Copy size={20} />}
+                onClick={() => {
+                  close()
+                  copyText(line?.text || '')
+                }}
+              >
+                Copy line
+              </SheetRow>
+              <SheetRow
+                icon={<ShareIcon size={20} />}
+                onClick={() => {
+                  close()
+                  shareText(line?.text || '')
+                }}
+              >
+                Share line
+              </SheetRow>
+            </Sheet>
+          )
+        })()}
 
       {/* Kirtan note sheet */}
       {showKirtanNote && (
@@ -318,31 +437,23 @@ function ScriptTab({ active, onClick, children }) {
   )
 }
 
-function LyricLine({ line, domId, flash, annotation, onToggleHighlight, onOpenNote }) {
+function LyricLine({ line, domId, flash, annotation, onTap }) {
   const highlighted = annotation?.highlight
   const note = annotation?.note
 
   return (
     <div id={domId} className={`-mx-2 px-2 ${flash ? 'search-flash' : ''}`}>
-      <div className="flex items-baseline gap-1">
-        <button
-          onClick={onToggleHighlight}
-          className={`-ml-2 min-w-0 flex-1 rounded py-0.5 pl-2 text-left transition-colors ${
-            highlighted ? 'glow' : 'text-snow/90 active:text-accent-bright'
-          }`}
-        >
-          {line.text}
-        </button>
-        <button
-          onClick={onOpenNote}
-          aria-label="Note on this line"
-          className={`flex h-9 w-9 shrink-0 items-center justify-center self-center rounded-full font-ui active:bg-surface ${
-            note ? 'text-punch' : 'text-line'
-          }`}
-        >
-          <Pencil size={15} />
-        </button>
-      </div>
+      <button
+        onClick={onTap}
+        className={`-ml-2 w-full rounded py-0.5 pl-2 pr-1 text-left transition-colors ${
+          highlighted ? 'glow' : 'text-snow/90 active:text-accent-bright'
+        }`}
+      >
+        {line.text}
+        {note && (
+          <Pencil size={13} className="ml-2 inline-block align-baseline text-accent-bright" />
+        )}
+      </button>
       {note && (
         <p className="mb-1.5 border-l-2 border-accent pl-3 font-ui text-[13px] font-normal italic leading-normal text-accent-bright">
           {note}

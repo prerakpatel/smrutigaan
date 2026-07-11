@@ -1,9 +1,14 @@
 // Bottom sheet — the mobile-native replacement for inline panels and dialogs.
 // Slides up from the bottom edge, dims the page behind it, closes on backdrop tap.
+// Rendered through a portal: sheets open from inside stacked pages (z-30),
+// whose stacking context would otherwise trap them below the z-50 tab bar —
+// covering the sheet's bottom and stealing its taps.
+
+import { createPortal } from 'react-dom'
 
 export default function Sheet({ open, onClose, title, children }) {
   if (!open) return null
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true">
       <div className="animate-fade-in absolute inset-0 bg-black/70" onClick={onClose} />
       <div className="animate-sheet-up absolute inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-2xl overflow-y-auto overscroll-contain rounded-t-3xl border-t border-white/10 bg-surface shadow-2xl">
@@ -15,7 +20,8 @@ export default function Sheet({ open, onClose, title, children }) {
         </div>
         <div className="px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-2">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

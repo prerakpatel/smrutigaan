@@ -1,6 +1,14 @@
 import { Minus, Plus } from './icons'
 
-export default function Settings({ state, actions, script, setScript, fontScale, setFontScale }) {
+export default function Settings({
+  state,
+  actions,
+  script,
+  setScript,
+  fontScale,
+  setFontScale,
+  onAdd,
+}) {
   const download = () => {
     const blob = new Blob([actions.exportJSON()], { type: 'application/json' })
     const a = document.createElement('a')
@@ -76,6 +84,12 @@ export default function Settings({ state, actions, script, setScript, fontScale,
         </Section>
 
         <Section title="Your library">
+          <RowButton onClick={onAdd}>
+            <span className="flex items-center gap-2.5 font-medium text-accent-bright">
+              <Plus size={18} sw={2} />
+              Add a new kirtan
+            </span>
+          </RowButton>
           <Row label="Kirtans">
             <span className="text-sm text-muted">{state.kirtans.length}</span>
           </Row>

@@ -4,9 +4,10 @@ import Library from './components/Library'
 import KirtanView from './components/KirtanView'
 import Editor from './components/Editor'
 import Playlists, { PlaylistDetail } from './components/Playlists'
+import Notes from './components/Notes'
 import Settings from './components/Settings'
 import { usePlayer, MiniPlayer, FullPlayer } from './components/Player'
-import { BookOpen, Music, Cog } from './components/icons'
+import { BookOpen, Bookmark, Music, Cog } from './components/icons'
 
 const PREFS_KEY = 'smruti-gaan:prefs'
 
@@ -21,6 +22,7 @@ function loadPrefs() {
 const TABS = [
   { key: 'library', label: 'Library', Icon: BookOpen },
   { key: 'playlists', label: 'Playlists', Icon: Music },
+  { key: 'notes', label: 'Notes', Icon: Bookmark },
   { key: 'settings', label: 'Settings', Icon: Cog },
 ]
 
@@ -99,13 +101,7 @@ export default function App() {
   return (
     <div className="relative h-dvh">
       <TabPanel id="panel-library" active={tab === 'library'} padBottom={padBottom}>
-        <Library
-          state={state}
-          actions={actions}
-          script={script}
-          onOpen={openKirtan}
-          onAdd={() => push({ name: 'edit', id: null })}
-        />
+        <Library state={state} actions={actions} script={script} onOpen={openKirtan} />
       </TabPanel>
       <TabPanel id="panel-playlists" active={tab === 'playlists'} padBottom={padBottom}>
         <Playlists
@@ -115,6 +111,9 @@ export default function App() {
           onOpenPlaylist={(id) => push({ name: 'playlist', id })}
         />
       </TabPanel>
+      <TabPanel id="panel-notes" active={tab === 'notes'} padBottom={padBottom}>
+        <Notes state={state} script={script} onOpen={openKirtan} />
+      </TabPanel>
       <TabPanel id="panel-settings" active={tab === 'settings'} padBottom={padBottom}>
         <Settings
           state={state}
@@ -123,6 +122,7 @@ export default function App() {
           setScript={setScript}
           fontScale={fontScale}
           setFontScale={setFontScale}
+          onAdd={() => push({ name: 'edit', id: null })}
         />
       </TabPanel>
 
