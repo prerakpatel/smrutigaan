@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from './lib/store'
+import { useCloud } from './lib/cloud'
 import Library from './components/Library'
 import KirtanView from './components/KirtanView'
 import Editor from './components/Editor'
@@ -52,7 +53,21 @@ const TABS = [
 // and iOS edge-swipe-back both work.
 export default function App() {
   const { state, actions } = useStore()
+  const cloud = useCloud(state, actions)
   const player = usePlayer(state.kirtans)
+  // Editor saves/deletes go to the device first, then through to the cloud
+  // library (no-ops for non-editors).
+  const editorActions = {
+    ...actions,
+    saveKirtan(k) {
+      actions.saveKirtan(k)
+      cloud.pushKirtan(k)
+    },
+    deleteKirtan(id) {
+      actions.deleteKirtan(id)
+      cloud.removeKirtan(id)
+    },
+  }
   const nav = useRef(loadNav()).current
   const [tab, setTab] = useState(nav.tab || 'library')
   const [stack, setStack] = useState(nav.stack || []) // [{name:'kirtan'|'playlist'|'edit', id}]
@@ -176,6 +191,7 @@ export default function App() {
         <Settings
           state={state}
           actions={actions}
+          cloud={cloud}
           script={script}
           setScript={setScript}
           fontScale={fontScale}
@@ -200,6 +216,7 @@ export default function App() {
             <KirtanView
               state={state}
               actions={actions}
+              canEdit={cloud.isEditor}
               id={v.id}
               initialLine={v.line}
               script={script}
@@ -225,7 +242,7 @@ export default function App() {
           {v.name === 'edit' && (
             <Editor
               state={state}
-              actions={actions}
+              actions={editorActions}
               id={v.id}
               onCancel={back}
               onSaved={(savedId) => {

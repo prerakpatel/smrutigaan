@@ -172,6 +172,28 @@ export function useStore() {
       })
     },
 
+    // ---- cloud sync hooks ----
+    // Replace the library with the cloud copy, but keep any audio recordings
+    // attached on this device (IndexedDB blobs are device-local by design).
+    replaceKirtans(kirtans) {
+      update((s) => {
+        const localById = new Map(s.kirtans.map((k) => [k.id, k]))
+        s.kirtans = kirtans.map((k) => {
+          const local = localById.get(k.id)
+          return !k.audio && local?.audio?.blobId ? { ...k, audio: local.audio } : k
+        })
+        return s
+      })
+    },
+    applyUserData({ favorites, playlists, annotations }) {
+      update((s) => {
+        if (favorites) s.favorites = favorites
+        if (playlists) s.playlists = playlists
+        if (annotations) s.annotations = annotations
+        return s
+      })
+    },
+
     // ---- import / export (for moving data in and out during dev) ----
     exportJSON() {
       return JSON.stringify(state, null, 2)

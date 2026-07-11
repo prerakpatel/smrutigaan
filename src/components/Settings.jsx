@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Minus, Plus } from './icons'
 
 export default function Settings({
   state,
   actions,
+  cloud,
   script,
   setScript,
   fontScale,
@@ -11,6 +13,7 @@ export default function Settings({
   setTheme,
   onAdd,
 }) {
+  const [email, setEmail] = useState('')
   const download = () => {
     const blob = new Blob([actions.exportJSON()], { type: 'application/json' })
     const a = document.createElement('a')
@@ -98,13 +101,80 @@ export default function Settings({
           </p>
         </Section>
 
+        <Section title="Account">
+          {cloud.session ? (
+            <>
+              <Row label="Signed in as">
+                <span className="max-w-44 truncate text-sm text-muted">
+                  {cloud.session.user.email}
+                </span>
+              </Row>
+              {cloud.isEditor && (
+                <Row label="Role">
+                  <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent-bright">
+                    Editor
+                  </span>
+                </Row>
+              )}
+              {cloud.syncedAt && (
+                <Row label="Last synced">
+                  <span className="text-sm text-muted">
+                    {cloud.syncedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                  </span>
+                </Row>
+              )}
+              {cloud.isEditor && (
+                <RowButton
+                  onClick={() => {
+                    if (confirm('Publish every kirtan on this device to the shared cloud library?'))
+                      cloud.publishAll()
+                  }}
+                >
+                  Publish local library to cloud
+                </RowButton>
+              )}
+              <RowButton danger onClick={cloud.signOut}>
+                Sign out
+              </RowButton>
+            </>
+          ) : (
+            <>
+              <RowButton onClick={cloud.signInGoogle}>
+                <span className="font-medium text-accent-bright">Continue with Google</span>
+              </RowButton>
+              <div className="flex items-center gap-2 px-4 py-3">
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  inputMode="email"
+                  placeholder="Or email a sign-in link"
+                  className="min-w-0 flex-1 rounded-full bg-night px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent/70"
+                />
+                <button
+                  onClick={() => email.trim() && cloud.signInEmail(email.trim())}
+                  className="min-h-[40px] shrink-0 rounded-full bg-snow px-4 text-sm font-semibold text-night active:opacity-80"
+                >
+                  Send
+                </button>
+              </div>
+              <p className="px-4 pb-3 pt-1 text-xs leading-relaxed text-muted">
+                Sign in to sync your favorites, playlists, notes and highlights across devices.
+                The app keeps working fully offline either way.
+              </p>
+            </>
+          )}
+        </Section>
+
         <Section title="Your library">
-          <RowButton onClick={onAdd}>
-            <span className="flex items-center gap-2.5 font-medium text-accent-bright">
-              <Plus size={18} sw={2} />
-              Add a new kirtan
-            </span>
-          </RowButton>
+          {cloud.isEditor && (
+            <RowButton onClick={onAdd}>
+              <span className="flex items-center gap-2.5 font-medium text-accent-bright">
+                <Plus size={18} sw={2} />
+                Add a new kirtan
+              </span>
+            </RowButton>
+          )}
           <Row label="Kirtans">
             <span className="text-sm text-muted">{state.kirtans.length}</span>
           </Row>

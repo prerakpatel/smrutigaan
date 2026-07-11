@@ -26,6 +26,7 @@ import {
 export default function KirtanView({
   state,
   actions,
+  canEdit = false,
   id,
   initialLine,
   script,
@@ -328,15 +329,17 @@ export default function KirtanView({
         >
           {ann.note ? 'Edit kirtan note' : 'Add kirtan note'}
         </SheetRow>
-        <SheetRow
-          icon={<Pencil size={20} />}
-          onClick={() => {
-            setShowActions(false)
-            onEdit()
-          }}
-        >
-          Edit lyrics
-        </SheetRow>
+        {canEdit && (
+          <SheetRow
+            icon={<Pencil size={20} />}
+            onClick={() => {
+              setShowActions(false)
+              onEdit()
+            }}
+          >
+            Edit lyrics
+          </SheetRow>
+        )}
         <div className="flex min-h-[48px] items-center gap-3 rounded-xl px-3 py-2.5">
           <span className="text-base">Script</span>
           <div className="ml-auto flex rounded-full bg-card p-0.5 text-sm">
