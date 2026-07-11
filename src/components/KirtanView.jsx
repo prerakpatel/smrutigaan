@@ -408,6 +408,8 @@ export default function KirtanView({
           actions live inside the sheet, so nothing useful hides beneath it. */}
       {viewNote !== null && viewedEntry && (
         <Sheet open onClose={() => setViewNote(null)} title="Note" expandable>
+          {(full) => (
+            <>
           <div className="border-l-2 border-accent pl-3">
             {lines
               .filter((l) => l.type === 'line' && viewedSpan.includes(l.index))
@@ -420,7 +422,12 @@ export default function KirtanView({
           <p className="mt-3 whitespace-pre-wrap text-base italic leading-relaxed text-accent-bright">
             {viewedEntry.note}
           </p>
-          <div className="mt-4 flex items-center justify-between rounded-2xl border border-accent/30 bg-night/60 px-1.5 py-1">
+          {/* pinned to the bottom edge when the sheet is expanded */}
+          <div
+            className={`flex items-center justify-between rounded-2xl border border-accent/30 bg-night/60 px-1.5 py-1 ${
+              full ? 'mt-auto' : 'mt-4'
+            }`}
+          >
             <BarBtn
               icon={<Pencil size={19} />}
               label="Edit"
@@ -451,6 +458,8 @@ export default function KirtanView({
               }}
             />
           </div>
+            </>
+          )}
         </Sheet>
       )}
 
@@ -701,37 +710,43 @@ function NoteSheet({ title, subtitle, placeholder, initial, onDone }) {
   const [text, setText] = useState(initial)
   return (
     <Sheet open onClose={() => onDone(text)} title={title} expandable>
-      {subtitle && (
-        <div className="mb-2 max-h-24 overflow-y-auto border-l-2 border-accent pl-3">
-          <p className="whitespace-pre-wrap font-lyrics text-sm leading-relaxed text-muted">
-            {subtitle}
-          </p>
-        </div>
+      {(full) => (
+        <>
+          {subtitle && (
+            <div className="mb-2 max-h-24 shrink-0 overflow-y-auto border-l-2 border-accent pl-3">
+              <p className="whitespace-pre-wrap font-lyrics text-sm leading-relaxed text-muted">
+                {subtitle}
+              </p>
+            </div>
+          )}
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={5}
+            autoFocus
+            placeholder={placeholder}
+            className={`min-h-28 w-full rounded-xl bg-card p-3 text-base outline-none focus:ring-2 focus:ring-accent/70 ${
+              full ? 'flex-1 resize-none' : ''
+            }`}
+          />
+          <div className="mt-3 flex shrink-0 gap-2">
+            <button
+              onClick={() => onDone(text)}
+              className="min-h-[44px] flex-1 rounded-full bg-snow text-base font-semibold text-night active:opacity-80"
+            >
+              Done
+            </button>
+            {initial && (
+              <button
+                onClick={() => onDone('')}
+                className="min-h-[44px] rounded-full bg-punch/10 px-5 text-base font-medium text-punch active:bg-punch/20"
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        </>
       )}
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={5}
-        autoFocus
-        placeholder={placeholder}
-        className="min-h-28 w-full rounded-xl bg-card p-3 text-base outline-none focus:ring-2 focus:ring-accent/70"
-      />
-      <div className="mt-3 flex gap-2">
-        <button
-          onClick={() => onDone(text)}
-          className="min-h-[44px] flex-1 rounded-full bg-snow text-base font-semibold text-night active:opacity-80"
-        >
-          Done
-        </button>
-        {initial && (
-          <button
-            onClick={() => onDone('')}
-            className="min-h-[44px] rounded-full bg-punch/10 px-5 text-base font-medium text-punch active:bg-punch/20"
-          >
-            Delete
-          </button>
-        )}
-      </div>
     </Sheet>
   )
 }

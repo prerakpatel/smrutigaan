@@ -14,12 +14,18 @@ export default function Sheet({ open, onClose, title, expandable = false, childr
     if (!open) setFull(false)
   }, [open])
   if (!open) return null
+  // Expanded mode becomes a flex column with the scroll area inside, so
+  // content can pin elements (action rows) to the bottom edge via mt-auto —
+  // children may be a function receiving `full` to opt into that layout.
+  const body = typeof children === 'function' ? children(full) : children
   return createPortal(
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true">
       <div className="animate-fade-in absolute inset-0 bg-black/70" onClick={onClose} />
       <div
-        className={`animate-sheet-up absolute inset-x-0 bottom-0 mx-auto max-w-2xl overflow-y-auto overscroll-contain border-t border-veil/10 bg-surface shadow-2xl ${
-          full ? 'top-0 rounded-none' : 'max-h-[85dvh] rounded-t-3xl'
+        className={`animate-sheet-up absolute inset-x-0 bottom-0 mx-auto max-w-2xl border-t border-veil/10 bg-surface shadow-2xl ${
+          full
+            ? 'top-0 flex flex-col overflow-hidden rounded-none'
+            : 'max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl'
         }`}
       >
         <div
@@ -45,7 +51,13 @@ export default function Sheet({ open, onClose, title, expandable = false, childr
             )}
           </div>
         </div>
-        <div className="px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-1">{children}</div>
+        <div
+          className={`px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-1 ${
+            full ? 'flex flex-1 flex-col overflow-y-auto overscroll-contain' : ''
+          }`}
+        >
+          {body}
+        </div>
       </div>
     </div>,
     document.body
