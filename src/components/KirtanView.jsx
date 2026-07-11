@@ -33,7 +33,7 @@ export default function KirtanView({
   if (!kirtan) {
     return (
       <div className="pt-safe px-4">
-        <div className="pt-16 text-center text-sm text-stone">
+        <div className="pt-16 text-center text-sm text-muted">
           <p>This kirtan no longer exists.</p>
           <button onClick={onBack} className="mt-2 underline">
             Back to library
@@ -68,14 +68,17 @@ export default function KirtanView({
   }
 
   return (
-    <article className="mx-auto max-w-2xl">
+    <article className="relative mx-auto max-w-2xl">
+      {/* Hero wash — a soft gradient bleeding down from the top, album-page style */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-accent/25 via-fuchsia-500/[0.07] to-transparent" />
+
       {/* Pinned nav bar */}
-      <div className="pt-safe sticky top-0 z-20 bg-marble/95 backdrop-blur">
+      <div className="pt-safe sticky top-0 z-20 bg-night/85 backdrop-blur-xl">
         <div className="flex h-12 items-center px-1">
           <button
             onClick={onBack}
             aria-label="Back"
-            className="flex h-11 w-11 items-center justify-center rounded-full text-saffron-deep active:bg-parchment"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-snow active:bg-surface"
           >
             <ChevronLeft size={26} sw={2} />
           </button>
@@ -85,8 +88,8 @@ export default function KirtanView({
           <button
             onClick={() => actions.toggleFavorite(id)}
             aria-label="Toggle favorite"
-            className={`flex h-11 w-11 items-center justify-center rounded-full active:bg-parchment ${
-              fav ? 'text-madder' : 'text-stone'
+            className={`flex h-11 w-11 items-center justify-center rounded-full active:bg-surface ${
+              fav ? 'text-punch' : 'text-muted'
             }`}
           >
             <Heart size={22} filled={fav} />
@@ -94,7 +97,7 @@ export default function KirtanView({
           <button
             onClick={() => setShowActions(true)}
             aria-label="More actions"
-            className="flex h-11 w-11 items-center justify-center rounded-full text-stone active:bg-parchment"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-muted active:bg-surface"
           >
             <Ellipsis size={22} />
           </button>
@@ -102,17 +105,20 @@ export default function KirtanView({
       </div>
 
       <div className="px-5">
-        <header className="mt-3">
-          <h2 className="font-display font-lyrics text-[26px] font-semibold leading-snug">
+        <header className="mt-4">
+          <h2 className="font-lyrics text-[30px] font-extrabold leading-tight tracking-tight">
             {title}
           </h2>
-          <p className="mt-1 text-sm text-stone">
+          <p className="mt-1.5 text-sm font-medium text-snow/60">
             {script === 'gu' ? kirtan.title.en : kirtan.title.gu}
           </p>
           {(kirtan.categories || []).length > 0 && (
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {kirtan.categories.map((c) => (
-                <span key={c} className="rounded-full bg-parchment px-2.5 py-1 text-[11px] text-stone">
+                <span
+                  key={c}
+                  className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-snow/80"
+                >
                   {c}
                 </span>
               ))}
@@ -120,8 +126,8 @@ export default function KirtanView({
           )}
         </header>
 
-        {/* Script flip — iOS-style segmented control */}
-        <div className="mt-5 flex rounded-xl bg-parchment p-1 text-[15px]">
+        {/* Script flip — segmented control */}
+        <div className="mt-5 flex rounded-full bg-surface p-1 text-[15px]">
           <ScriptTab active={script === 'gu'} onClick={() => setScript('gu')}>
             ગુજરાતી
           </ScriptTab>
@@ -131,7 +137,7 @@ export default function KirtanView({
         </div>
 
         {otherScriptMissing && (
-          <p className="mt-3 text-xs text-madder">
+          <p className="mt-3 text-xs text-punch">
             No {script === 'gu' ? 'Gujarati' : 'transliteration'} text yet — showing the other
             script. Add it via Edit.
           </p>
@@ -140,8 +146,8 @@ export default function KirtanView({
         {/* Lyrics: tap a line to highlight it, tap ✎ for a note.
             Annotations key off line index, shared across both scripts. */}
         <div
-          className="mt-6 font-lyrics leading-loose"
-          style={{ fontSize: `${1.125 * fontScale}rem` }}
+          className="mt-7 font-lyrics font-semibold leading-[1.75]"
+          style={{ fontSize: `${1.25 * fontScale}rem` }}
         >
           {lines.map((l) =>
             l.type === 'break' ? (
@@ -159,20 +165,20 @@ export default function KirtanView({
         </div>
 
         {/* Kirtan-level note */}
-        <section className="mb-6 mt-10 rounded-2xl border border-hairline bg-white p-4">
+        <section className="mb-6 mt-10 rounded-2xl border border-white/5 bg-surface p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-[11px] uppercase tracking-[0.15em] text-stone">
+            <h3 className="text-[11px] uppercase tracking-[0.15em] text-muted">
               Note on this kirtan
             </h3>
             <button
               onClick={() => setShowKirtanNote(true)}
-              className="-my-1 flex min-h-[36px] items-center text-sm font-medium text-saffron-deep"
+              className="-my-1 flex min-h-[36px] items-center text-sm font-medium text-accent-bright"
             >
               {ann.note ? 'Edit' : 'Add note'}
             </button>
           </div>
           {ann.note && (
-            <p className="mt-1 whitespace-pre-wrap text-sm italic leading-relaxed text-madder">
+            <p className="mt-1 whitespace-pre-wrap text-sm italic leading-relaxed text-accent-bright">
               {ann.note}
             </p>
           )}
@@ -204,21 +210,21 @@ export default function KirtanView({
         </SheetRow>
         <div className="mt-1 flex min-h-[48px] items-center gap-3 rounded-xl px-3 py-2.5">
           <span className="text-base">Text size</span>
-          <div className="ml-auto flex items-center gap-1 rounded-full border border-hairline bg-white">
+          <div className="ml-auto flex items-center gap-1 rounded-full bg-card">
             <button
               onClick={() => setFontScale(Math.max(0.85, +(fontScale - 0.125).toFixed(3)))}
               aria-label="Smaller text"
-              className="flex h-10 w-12 items-center justify-center rounded-l-full active:bg-parchment"
+              className="flex h-10 w-12 items-center justify-center rounded-l-full active:bg-surface"
             >
               <Minus size={18} />
             </button>
-            <span className="w-10 text-center text-sm text-stone">
+            <span className="w-10 text-center text-sm text-muted">
               {Math.round(fontScale * 100)}%
             </span>
             <button
               onClick={() => setFontScale(Math.min(1.6, +(fontScale + 0.125).toFixed(3)))}
               aria-label="Larger text"
-              className="flex h-10 w-12 items-center justify-center rounded-r-full active:bg-parchment"
+              className="flex h-10 w-12 items-center justify-center rounded-r-full active:bg-surface"
             >
               <Plus size={18} />
             </button>
@@ -265,8 +271,8 @@ function ScriptTab({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`min-h-[40px] flex-1 select-none rounded-lg font-lyrics transition-all ${
-        active ? 'bg-white font-medium text-ink shadow-sm' : 'text-stone'
+      className={`min-h-[40px] flex-1 select-none rounded-full font-lyrics transition-all ${
+        active ? 'bg-snow font-semibold text-night' : 'text-muted'
       }`}
     >
       {children}
@@ -283,8 +289,8 @@ function LyricLine({ line, annotation, onToggleHighlight, onOpenNote }) {
       <div className="flex items-baseline gap-1">
         <button
           onClick={onToggleHighlight}
-          className={`min-w-0 flex-1 rounded py-0.5 text-left transition-colors ${
-            highlighted ? 'haldi' : 'active:text-saffron-deep'
+          className={`-ml-2 min-w-0 flex-1 rounded py-0.5 pl-2 text-left transition-colors ${
+            highlighted ? 'glow' : 'text-snow/90 active:text-accent-bright'
           }`}
         >
           {line.text}
@@ -292,15 +298,15 @@ function LyricLine({ line, annotation, onToggleHighlight, onOpenNote }) {
         <button
           onClick={onOpenNote}
           aria-label="Note on this line"
-          className={`flex h-9 w-9 shrink-0 items-center justify-center self-center rounded-full font-ui active:bg-parchment ${
-            note ? 'text-madder' : 'text-hairline'
+          className={`flex h-9 w-9 shrink-0 items-center justify-center self-center rounded-full font-ui active:bg-surface ${
+            note ? 'text-punch' : 'text-line'
           }`}
         >
           <Pencil size={15} />
         </button>
       </div>
       {note && (
-        <p className="mb-1.5 border-l-2 border-saffron pl-3 font-ui text-[13px] italic leading-normal text-madder">
+        <p className="mb-1.5 border-l-2 border-accent pl-3 font-ui text-[13px] font-normal italic leading-normal text-accent-bright">
           {note}
         </p>
       )}
@@ -315,7 +321,7 @@ function NoteSheet({ title, subtitle, placeholder, initial, onDone }) {
   return (
     <Sheet open onClose={() => onDone(text)} title={title}>
       {subtitle && (
-        <p className="mb-2 truncate border-l-2 border-saffron pl-3 font-lyrics text-sm text-stone">
+        <p className="mb-2 truncate border-l-2 border-accent pl-3 font-lyrics text-sm text-muted">
           {subtitle}
         </p>
       )}
@@ -325,19 +331,19 @@ function NoteSheet({ title, subtitle, placeholder, initial, onDone }) {
         rows={4}
         autoFocus
         placeholder={placeholder}
-        className="w-full rounded-xl border border-hairline bg-white p-3 text-base outline-none focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
+        className="w-full rounded-xl bg-card p-3 text-base outline-none focus:ring-2 focus:ring-accent/70"
       />
       <div className="mt-3 flex gap-2">
         <button
           onClick={() => onDone(text)}
-          className="min-h-[44px] flex-1 rounded-full bg-ink text-base font-medium text-marble active:bg-madder"
+          className="min-h-[44px] flex-1 rounded-full bg-snow text-base font-semibold text-night active:opacity-80"
         >
           Done
         </button>
         {initial && (
           <button
             onClick={() => onDone('')}
-            className="min-h-[44px] rounded-full border border-hairline bg-white px-5 text-base text-madder"
+            className="min-h-[44px] rounded-full bg-punch/10 px-5 text-base font-medium text-punch active:bg-punch/20"
           >
             Delete
           </button>
@@ -358,7 +364,7 @@ function PlaylistPicker({ state, actions, kirtanId }) {
   return (
     <div>
       {state.playlists.length === 0 && (
-        <p className="px-3 py-2 text-sm text-stone">No playlists yet — create one below.</p>
+        <p className="px-3 py-2 text-sm text-muted">No playlists yet — create one below.</p>
       )}
       {state.playlists.map((p) => {
         const inList = p.kirtanIds.includes(kirtanId)
@@ -368,28 +374,28 @@ function PlaylistPicker({ state, actions, kirtanId }) {
             onClick={() => actions.togglePlaylistItem(p.id, kirtanId)}
             trailing={
               inList ? (
-                <Check size={20} className="text-saffron-deep" />
+                <Check size={20} className="text-accent-bright" />
               ) : (
-                <span className="h-5 w-5 rounded-full border border-hairline" />
+                <span className="h-5 w-5 rounded-full border border-line" />
               )
             }
           >
             <span className="block truncate">{p.name}</span>
-            <span className="block text-xs text-stone">{p.kirtanIds.length} kirtans</span>
+            <span className="block text-xs text-muted">{p.kirtanIds.length} kirtans</span>
           </SheetRow>
         )
       })}
-      <div className="mt-2 flex gap-2 border-t border-hairline pt-3">
+      <div className="mt-2 flex gap-2 border-t border-line pt-3">
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && create()}
           placeholder="New playlist name"
-          className="min-w-0 flex-1 rounded-full border border-hairline bg-white px-4 py-2.5 text-base outline-none focus:border-saffron"
+          className="min-w-0 flex-1 rounded-full bg-card px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-accent/70"
         />
         <button
           onClick={create}
-          className="min-h-[44px] shrink-0 rounded-full bg-ink px-5 text-base text-marble active:bg-madder"
+          className="min-h-[44px] shrink-0 rounded-full bg-snow px-5 text-base font-semibold text-night active:opacity-80"
         >
           Create
         </button>

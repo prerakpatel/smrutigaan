@@ -42,18 +42,18 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col">
       {/* Modal top bar */}
-      <div className="pt-safe sticky top-0 z-20 bg-marble/95 backdrop-blur">
+      <div className="pt-safe sticky top-0 z-20 bg-night/85 backdrop-blur-xl">
         <div className="flex h-12 items-center justify-between px-2">
           <button
             onClick={onCancel}
-            className="flex min-h-[44px] items-center px-2 text-base text-stone active:text-ink"
+            className="flex min-h-[44px] items-center px-2 text-base text-muted active:text-snow"
           >
             Cancel
           </button>
           <p className="text-[15px] font-semibold">{existing ? 'Edit kirtan' : 'New kirtan'}</p>
           <button
             onClick={save}
-            className="my-1.5 flex min-h-[36px] items-center rounded-full bg-ink px-4 text-base font-medium text-marble active:bg-madder"
+            className="grad-brand my-1.5 flex min-h-[36px] items-center rounded-full px-4 text-base font-semibold text-white shadow-md shadow-fuchsia-500/25 active:opacity-85"
           >
             Save
           </button>
@@ -61,19 +61,19 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
       </div>
 
       <div className="flex-1 px-4 pb-[max(env(safe-area-inset-bottom),1rem)]">
-        <p className="mt-2 text-sm text-stone">
+        <p className="mt-2 text-sm text-muted">
           The title is taken from the first line automatically.
         </p>
 
         {/* Live extracted titles */}
-        <div className="mt-3 rounded-xl border border-hairline bg-parchment/60 p-3 text-sm">
-          <p className="font-lyrics text-base">
-            {titleGu || <span className="text-stone">Gujarati title will appear here</span>}
+        <div className="mt-3 rounded-xl border border-white/5 bg-surface p-3 text-sm">
+          <p className="font-lyrics text-base font-medium">
+            {titleGu || <span className="text-muted">Gujarati title will appear here</span>}
           </p>
-          <p className="mt-0.5 text-stone">{titleEn || 'Transliterated title will appear here'}</p>
+          <p className="mt-0.5 text-muted">{titleEn || 'Transliterated title will appear here'}</p>
         </div>
 
-        <div className="mt-4 flex rounded-xl bg-parchment p-1 text-[15px]">
+        <div className="mt-4 flex rounded-full bg-surface p-1 text-[15px]">
           <TabButton active={tab === 'gu'} onClick={() => setTab('gu')}>
             ગુજરાતી
           </TabButton>
@@ -88,7 +88,7 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
             onChange={(e) => setGu(e.target.value)}
             rows={14}
             placeholder={'પહેલી પંક્તિ = શીર્ષક\n\nપછી અંતરા, ખાલી લીટીથી અલગ…'}
-            className="mt-3 w-full rounded-xl border border-hairline bg-white p-4 font-lyrics text-lg leading-loose outline-none focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
+            className="mt-3 w-full rounded-xl bg-card p-4 font-lyrics text-lg leading-loose outline-none focus:ring-2 focus:ring-accent/70"
           />
         ) : (
           <textarea
@@ -96,21 +96,21 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
             onChange={(e) => setEn(e.target.value)}
             rows={14}
             placeholder={'First line = title\n\nThen verses, separated by blank lines…'}
-            className="mt-3 w-full rounded-xl border border-hairline bg-white p-4 font-lyrics text-lg leading-loose outline-none focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
+            className="mt-3 w-full rounded-xl bg-card p-4 font-lyrics text-lg leading-loose outline-none focus:ring-2 focus:ring-accent/70"
           />
         )}
 
         <label className="mt-4 block">
-          <span className="text-[11px] uppercase tracking-[0.15em] text-stone">Categories</span>
+          <span className="text-[11px] uppercase tracking-[0.15em] text-muted">Categories</span>
           <input
             value={categories}
             onChange={(e) => setCategories(e.target.value)}
             placeholder="Prarthana, Aarti, Thal — comma separated"
-            className="mt-1 w-full rounded-xl border border-hairline bg-white px-3 py-3 text-base outline-none focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
+            className="mt-1 w-full rounded-xl bg-card px-3 py-3 text-base outline-none focus:ring-2 focus:ring-accent/70"
           />
         </label>
 
-        <p className="mt-4 text-xs leading-relaxed text-stone">
+        <p className="mt-4 text-xs leading-relaxed text-muted">
           Tip: keep the Gujarati and transliteration line-for-line parallel (same number of lines
           and stanza breaks). Highlights and notes are attached to line numbers, so parallel
           structure keeps them aligned when you flip scripts.
@@ -119,7 +119,7 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
         {existing && (
           <button
             onClick={remove}
-            className="mt-6 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-hairline bg-white text-base text-madder active:bg-parchment"
+            className="mt-6 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-punch/25 bg-punch/10 text-base font-medium text-punch active:bg-punch/20"
           >
             <Trash size={18} />
             Delete kirtan
@@ -134,8 +134,8 @@ function TabButton({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`min-h-[40px] flex-1 select-none rounded-lg font-lyrics transition-all ${
-        active ? 'bg-white font-medium text-ink shadow-sm' : 'text-stone'
+      className={`min-h-[40px] flex-1 select-none rounded-full font-lyrics transition-all ${
+        active ? 'bg-snow font-semibold text-night' : 'text-muted'
       }`}
     >
       {children}

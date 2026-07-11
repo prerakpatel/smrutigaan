@@ -118,7 +118,7 @@ export default function App() {
       {stack.map((v, i) => (
         <div
           key={`${v.name}-${v.id ?? 'new'}-${i}`}
-          className={`animate-page-in fixed inset-0 overflow-y-auto overscroll-contain bg-marble ${
+          className={`animate-page-in fixed inset-0 overflow-y-auto overscroll-contain bg-night ${
             v.name === 'edit' ? 'z-[60]' : 'z-30 pb-tabbar'
           }`}
         >
@@ -166,7 +166,7 @@ export default function App() {
       ))}
 
       {/* Bottom tab bar */}
-      <nav className="pb-safe fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-marble/95 backdrop-blur">
+      <nav className="pb-safe fixed inset-x-0 bottom-0 z-50 border-t border-white/5 bg-night/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl">
           {TABS.map(({ key, label, Icon }) => {
             const active = key === tab && stack.length === 0
@@ -175,7 +175,7 @@ export default function App() {
                 key={key}
                 onClick={() => openTab(key)}
                 className={`flex min-h-[56px] flex-1 select-none flex-col items-center justify-center gap-1 pt-1.5 transition-colors ${
-                  active ? 'text-saffron-deep' : 'text-stone active:text-ink'
+                  active ? 'text-snow' : 'text-muted active:text-snow'
                 }`}
               >
                 <Icon size={24} sw={active ? 2.1 : 1.8} />

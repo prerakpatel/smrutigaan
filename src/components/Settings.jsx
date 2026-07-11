@@ -29,7 +29,7 @@ export default function Settings({ state, actions, script, setScript, fontScale,
   return (
     <div>
       <div className="pt-safe px-4">
-        <h1 className="pt-4 font-display text-[28px] font-semibold leading-none tracking-tight">
+        <h1 className="pt-4 font-display text-[32px] font-extrabold leading-none tracking-tight">
           Settings
         </h1>
       </div>
@@ -37,7 +37,7 @@ export default function Settings({ state, actions, script, setScript, fontScale,
       <div className="mt-5 space-y-5 px-4">
         <Section title="Reading">
           <Row label="Default script">
-            <div className="flex rounded-lg bg-parchment p-0.5 text-sm">
+            <div className="flex rounded-full bg-night p-0.5 text-sm">
               <Seg active={script === 'gu'} onClick={() => setScript('gu')}>
                 ગુજરાતી
               </Seg>
@@ -47,49 +47,52 @@ export default function Settings({ state, actions, script, setScript, fontScale,
             </div>
           </Row>
           <Row label="Lyrics text size">
-            <div className="flex items-center gap-1 rounded-full border border-hairline bg-white">
+            <div className="flex items-center gap-1 rounded-full bg-night">
               <button
                 onClick={() => setFontScale(Math.max(0.85, +(fontScale - 0.125).toFixed(3)))}
                 aria-label="Smaller text"
-                className="flex h-10 w-12 items-center justify-center rounded-l-full active:bg-parchment"
+                className="flex h-10 w-12 items-center justify-center rounded-l-full active:bg-card"
               >
                 <Minus size={18} />
               </button>
-              <span className="w-10 text-center text-sm text-stone">
+              <span className="w-10 text-center text-sm text-muted">
                 {Math.round(fontScale * 100)}%
               </span>
               <button
                 onClick={() => setFontScale(Math.min(1.6, +(fontScale + 0.125).toFixed(3)))}
                 aria-label="Larger text"
-                className="flex h-10 w-12 items-center justify-center rounded-r-full active:bg-parchment"
+                className="flex h-10 w-12 items-center justify-center rounded-r-full active:bg-card"
               >
                 <Plus size={18} />
               </button>
             </div>
           </Row>
-          <p className="px-4 pb-3 pt-1 font-lyrics leading-relaxed text-stone" style={{ fontSize: `${1.125 * fontScale}rem` }}>
+          <p
+            className="px-4 pb-3 pt-1 font-lyrics font-semibold leading-relaxed text-snow/80"
+            style={{ fontSize: `${1.125 * fontScale}rem` }}
+          >
             જય સ્વામિનારાયણ · Jay Swaminarayan
           </p>
         </Section>
 
         <Section title="Your library">
           <Row label="Kirtans">
-            <span className="text-sm text-stone">{state.kirtans.length}</span>
+            <span className="text-sm text-muted">{state.kirtans.length}</span>
           </Row>
           <Row label="Favorites">
-            <span className="text-sm text-stone">{state.favorites.length}</span>
+            <span className="text-sm text-muted">{state.favorites.length}</span>
           </Row>
           <Row label="Playlists">
-            <span className="text-sm text-stone">{state.playlists.length}</span>
+            <span className="text-sm text-muted">{state.playlists.length}</span>
           </Row>
           <Row label="Annotated kirtans">
-            <span className="text-sm text-stone">{annotated}</span>
+            <span className="text-sm text-muted">{annotated}</span>
           </Row>
         </Section>
 
         <Section title="Data">
           <RowButton onClick={download}>Export library as JSON</RowButton>
-          <label className="flex min-h-[52px] cursor-pointer items-center px-4 text-base transition-colors active:bg-parchment">
+          <label className="flex min-h-[52px] cursor-pointer items-center px-4 text-base transition-colors active:bg-card">
             Import library from JSON
             <input type="file" accept="application/json" onChange={upload} className="hidden" />
           </label>
@@ -106,13 +109,13 @@ export default function Settings({ state, actions, script, setScript, fontScale,
           >
             Reset to seed data
           </RowButton>
-          <p className="px-4 pb-3 pt-1 text-xs leading-relaxed text-stone">
+          <p className="px-4 pb-3 pt-1 text-xs leading-relaxed text-muted">
             Everything is stored on this device. Export regularly to back up your notes,
             favorites and playlists — you can import the file on another device.
           </p>
         </Section>
 
-        <p className="pb-4 text-center text-[11px] uppercase tracking-[0.18em] text-stone">
+        <p className="pb-4 text-center text-[11px] uppercase tracking-[0.18em] text-muted">
           Smruti Gaan · Hariprabodham
         </p>
       </div>
@@ -123,8 +126,8 @@ export default function Settings({ state, actions, script, setScript, fontScale,
 function Section({ title, children }) {
   return (
     <section>
-      <h2 className="px-4 pb-1.5 text-[11px] uppercase tracking-[0.15em] text-stone">{title}</h2>
-      <div className="divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline bg-white">
+      <h2 className="px-4 pb-1.5 text-[11px] uppercase tracking-[0.15em] text-muted">{title}</h2>
+      <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/5 bg-surface">
         {children}
       </div>
     </section>
@@ -144,8 +147,8 @@ function RowButton({ onClick, danger = false, children }) {
   return (
     <button
       onClick={onClick}
-      className={`flex min-h-[52px] w-full items-center px-4 text-left text-base transition-colors active:bg-parchment ${
-        danger ? 'text-madder' : ''
+      className={`flex min-h-[52px] w-full items-center px-4 text-left text-base transition-colors active:bg-card ${
+        danger ? 'text-punch' : ''
       }`}
     >
       {children}
@@ -157,8 +160,8 @@ function Seg({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`min-h-[36px] select-none rounded-md px-3.5 font-lyrics transition-all ${
-        active ? 'bg-white font-medium text-ink shadow-sm' : 'text-stone'
+      className={`min-h-[36px] select-none rounded-full px-3.5 font-lyrics transition-all ${
+        active ? 'bg-snow font-semibold text-night' : 'text-muted'
       }`}
     >
       {children}

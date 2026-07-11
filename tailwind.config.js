@@ -4,27 +4,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        marble: '#F8F5EE',
-        parchment: '#F1ECE0',
-        ink: '#2A2419',
-        stone: '#8E8574',
-        hairline: '#E7E0D2',
-        saffron: {
-          DEFAULT: '#DE8A1F',
-          soft: '#F6E3C3',
-          deep: '#B96F12',
+        // Dark, music-app palette: near-black base, layered surfaces,
+        // electric violet accent, hot pink for hearts/highlights.
+        night: '#0A0A10', // app background
+        surface: '#16161F', // raised: search fields, segmented controls, chips
+        card: '#1E1E29', // raised further: cards, inputs, sheets
+        snow: '#F6F5FA', // primary text; also filled "white pill" buttons
+        muted: '#8E8EA3', // secondary text
+        line: '#262633', // hairline borders / dividers
+        accent: {
+          DEFAULT: '#8B5CF6', // electric violet
+          bright: '#A78BFA', // readable accent text on dark
+          soft: '#261D3F', // translucent-looking violet wash
         },
-        madder: '#8A3B22',
+        punch: '#FF4D6D', // favorites, notes, destructive
       },
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
         ui: ['Inter', 'system-ui', 'sans-serif'],
         // Lyrics stack, resolved per glyph: Latin (transliteration, digits,
-        // diacritics like ā/ṇ/ś) renders in Noto Serif — large x-height, open
-        // letterforms, easy to read at a glance while singing — and Gujarati
-        // falls through to its sibling Noto Serif Gujarati, so both scripts
-        // share identical weight and contrast when flipping mid-kirtan.
-        lyrics: ['"Noto Serif"', '"Noto Serif Gujarati"', 'Georgia', 'serif'],
+        // diacritics like ā/ṇ/ś) renders in Inter, and Gujarati falls through
+        // to Noto Sans Gujarati — both sans, matched weight, so the big-bold
+        // "lyrics screen" look holds when flipping scripts mid-kirtan.
+        lyrics: ['Inter', '"Noto Sans Gujarati"', 'system-ui', 'sans-serif'],
       },
     },
   },

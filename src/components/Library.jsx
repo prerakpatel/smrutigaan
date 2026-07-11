@@ -30,17 +30,17 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
       <div className="pt-safe px-4">
         <div className="flex items-end justify-between pt-4">
           <div>
-            <h1 className="font-display text-[28px] font-semibold leading-none tracking-tight">
-              Smruti <span className="text-saffron-deep">Gaan</span>
+            <h1 className="font-display text-[32px] font-extrabold leading-none tracking-tight">
+              Smruti <span className="text-grad">Gaan</span>
             </h1>
-            <p className="mt-1.5 text-[11px] uppercase tracking-[0.18em] text-stone">
+            <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.18em] text-muted">
               Hariprabodham
             </p>
           </div>
           <button
             onClick={onAdd}
             aria-label="Add kirtan"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-marble shadow-sm transition-transform active:scale-95"
+            className="grad-brand flex h-11 w-11 items-center justify-center rounded-full text-white shadow-lg shadow-fuchsia-500/25 transition-transform active:scale-95"
           >
             <Plus size={22} sw={2} />
           </button>
@@ -48,11 +48,11 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
       </div>
 
       {/* Search + filters stay pinned while the list scrolls */}
-      <div className="sticky top-0 z-10 bg-marble/95 px-4 pb-2 pt-3 backdrop-blur">
+      <div className="sticky top-0 z-10 bg-night/90 px-4 pb-2 pt-3 backdrop-blur-xl">
         <div className="relative">
           <SearchIcon
             size={18}
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
           />
           <input
             type="search"
@@ -60,13 +60,13 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search Gujarati or English…"
-            className="w-full rounded-full border border-hairline bg-white py-3 pl-10 pr-10 font-lyrics text-base outline-none transition-shadow placeholder:font-ui placeholder:text-stone focus:border-saffron focus:ring-2 focus:ring-saffron-soft"
+            className="w-full rounded-full bg-surface py-3 pl-10 pr-10 font-lyrics text-base outline-none transition-shadow placeholder:font-ui placeholder:text-muted focus:ring-2 focus:ring-accent/70"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
               aria-label="Clear search"
-              className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-stone active:text-ink"
+              className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted active:text-snow"
             >
               <X size={16} sw={2} />
             </button>
@@ -91,11 +91,11 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
       </div>
 
       <div className="px-4">
-        <p className="mt-2 text-[11px] uppercase tracking-[0.15em] text-stone">
+        <p className="mt-2 text-[11px] uppercase tracking-[0.15em] text-muted">
           {results.length} of {state.kirtans.length} kirtans
         </p>
 
-        <ul className="mt-1 divide-y divide-hairline">
+        <ul className="mt-1 divide-y divide-line">
           {results.map((k) => {
             const fav = state.favorites.includes(k.id)
             const hasNotes =
@@ -105,24 +105,24 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
               <li key={k.id} className="flex items-center">
                 <button
                   onClick={() => onOpen(k.id)}
-                  className="-ml-2 flex min-w-0 flex-1 items-center gap-2 rounded-xl py-3.5 pl-2 pr-1 text-left transition-colors active:bg-parchment"
+                  className="-ml-2 flex min-w-0 flex-1 items-center gap-2 rounded-xl py-3.5 pl-2 pr-1 text-left transition-colors active:bg-surface"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-lyrics text-lg leading-snug">
+                    <span className="block truncate font-lyrics text-[17px] font-medium leading-snug">
                       {script === 'gu' ? k.title.gu || k.title.en : k.title.en || k.title.gu}
                     </span>
-                    <span className="mt-0.5 block truncate text-xs text-stone">
+                    <span className="mt-0.5 block truncate text-xs text-muted">
                       {script === 'gu' ? k.title.en : k.title.gu}
-                      {hasNotes && <span className="ml-2 text-madder">· annotated</span>}
+                      {hasNotes && <span className="ml-2 text-punch">· annotated</span>}
                     </span>
                   </span>
-                  <ChevronRight size={16} className="shrink-0 text-hairline" />
+                  <ChevronRight size={16} className="shrink-0 text-line" />
                 </button>
                 <button
                   onClick={() => actions.toggleFavorite(k.id)}
                   aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
                   className={`flex h-11 w-11 shrink-0 items-center justify-center transition-colors ${
-                    fav ? 'text-madder' : 'text-hairline active:text-stone'
+                    fav ? 'text-punch' : 'text-line active:text-muted'
                   }`}
                 >
                   <Heart size={20} filled={fav} />
@@ -133,7 +133,7 @@ export default function Library({ state, actions, script, onOpen, onAdd }) {
         </ul>
 
         {results.length === 0 && (
-          <div className="mt-14 text-center text-sm text-stone">
+          <div className="mt-14 text-center text-sm text-muted">
             <p>No kirtans match this search.</p>
             <p className="mt-1">Try fewer words, or search in the other script.</p>
           </div>
@@ -147,10 +147,10 @@ function Chip({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 select-none whitespace-nowrap rounded-full border px-3.5 py-1.5 transition-colors ${
+      className={`shrink-0 select-none whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${
         active
-          ? 'border-saffron-deep bg-saffron-soft font-medium text-ink'
-          : 'border-hairline bg-white text-stone active:border-stone'
+          ? 'bg-snow font-semibold text-night'
+          : 'bg-surface text-muted active:bg-card active:text-snow'
       }`}
     >
       {children}

@@ -7,9 +7,10 @@
     -webkit-text-size-adjust: 100%;
     /* no grey flash on tap — we show our own active states instead */
     -webkit-tap-highlight-color: transparent;
+    color-scheme: dark;
   }
   body {
-    @apply bg-marble text-ink font-ui antialiased;
+    @apply bg-night text-snow font-ui antialiased;
     /* no rubber-band pull-to-refresh inside the app shell */
     overscroll-behavior-y: none;
     touch-action: manipulation;
@@ -24,16 +25,27 @@
 }
 
 @layer components {
-  /* The "haldi swipe": a slightly skewed saffron wash behind a highlighted line. */
-  .haldi {
+  /* Brand gradient — the one loud color moment, used sparingly:
+     FAB, save pill, playlist art tiles, hero washes. */
+  .grad-brand {
+    background-image: linear-gradient(135deg, #8b5cf6 0%, #d946ef 55%, #f43f5e 110%);
+  }
+  .text-grad {
+    background-image: linear-gradient(100deg, #a78bfa 0%, #e879f9 60%, #fb7185 110%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Highlighted lyric line: a soft neon wash with a glowing left edge. */
+  .glow {
     background-image: linear-gradient(
       100deg,
-      transparent 0%,
-      rgba(222, 138, 31, 0.28) 3%,
-      rgba(222, 138, 31, 0.22) 92%,
+      rgba(139, 92, 246, 0.3) 0%,
+      rgba(217, 70, 239, 0.14) 70%,
       transparent 100%
     );
-    border-radius: 2px;
+    border-radius: 6px;
+    box-shadow: inset 2.5px 0 0 #a78bfa;
   }
 }
 
