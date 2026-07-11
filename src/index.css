@@ -39,6 +39,9 @@
     /* no grey flash on tap — we show our own active states instead */
     -webkit-tap-highlight-color: transparent;
     color-scheme: dark;
+    /* paint the document itself so overscroll bounce and any standalone
+       letterboxing show theme color, never system gray/white */
+    background-color: rgb(var(--c-night));
   }
   body {
     @apply bg-night text-snow font-ui antialiased;
