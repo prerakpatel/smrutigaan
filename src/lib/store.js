@@ -17,6 +17,16 @@ import { deleteAudio } from './audioStore'
 
 const STORAGE_KEY = 'smruti-gaan:v1'
 
+// Canonical library order: by the source `number`. Seed ids are "k_NNN" so
+// number is recoverable from the id even if a record lost it; anything else
+// (editor-added, non-numeric id) sorts to the end.
+export function numberOf(k) {
+  if (typeof k.number === 'number') return k.number
+  const m = /^k_(\d+)$/.exec(k.id || '')
+  return m ? +m[1] : Number.MAX_SAFE_INTEGER
+}
+const sortKirtans = (arr) => [...arr].sort((a, b) => numberOf(a) - numberOf(b))
+
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -42,8 +52,13 @@ function migrate(state) {
   const seedById = new Map(seed.map((k) => [k.id, k]))
   state.kirtans = (state.kirtans || []).map((k) => {
     const s = seedById.get(k.id)
-    if (!s) return k
     let out = k
+    // restore source order stripped by an early cloud round-trip
+    if (out.number == null) {
+      const n = s ? s.number : numberOf(k)
+      if (n !== Number.MAX_SAFE_INTEGER) out = { ...out, number: n }
+    }
+    if (!s) return out
     if (!out.audio && s.audio) out = { ...out, audio: s.audio }
     if (out.lyrics?.gu && /[\uE000-\uF8FF]/.test(out.lyrics.gu)) {
       out = {
@@ -54,6 +69,7 @@ function migrate(state) {
     }
     return out
   })
+  state.kirtans = sortKirtans(state.kirtans)
   return state
 }
 
@@ -88,7 +104,15 @@ export function useStore() {
         const i = s.kirtans.findIndex((k) => k.id === kirtan.id)
         const stamped = { ...kirtan, updatedAt: new Date().toISOString() }
         if (i >= 0) s.kirtans[i] = stamped
-        else s.kirtans.push({ ...stamped, id: kirtan.id || newId() })
+        else {
+          // new kirtans sort after the existing library
+          const maxNum = s.kirtans.reduce((m, k) => {
+            const n = numberOf(k)
+            return n === Number.MAX_SAFE_INTEGER ? m : Math.max(m, n)
+          }, 0)
+          s.kirtans.push({ number: maxNum + 1, ...stamped, id: kirtan.id || newId() })
+          s.kirtans = sortKirtans(s.kirtans)
+        }
         return s
       })
     },
@@ -232,10 +256,20 @@ export function useStore() {
     replaceKirtans(kirtans) {
       update((s) => {
         const localById = new Map(s.kirtans.map((k) => [k.id, k]))
-        s.kirtans = kirtans.map((k) => {
-          const local = localById.get(k.id)
-          return !k.audio && local?.audio ? { ...k, audio: local.audio } : k
-        })
+        s.kirtans = sortKirtans(
+          kirtans.map((k) => {
+            const local = localById.get(k.id)
+            const out = { ...k }
+            // the cloud doesn't carry audio blobs or (yet) the number —
+            // keep what this device already knows so order & audio survive
+            if (!out.audio && local?.audio) out.audio = local.audio
+            if (out.number == null) {
+              const n = local?.number ?? numberOf(k)
+              if (n !== Number.MAX_SAFE_INTEGER) out.number = n
+            }
+            return out
+          })
+        )
         return s
       })
     },
