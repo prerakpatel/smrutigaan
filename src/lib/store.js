@@ -21,7 +21,7 @@ function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     // spread over defaults so states saved by older versions gain new keys
-    if (raw) return { sharedPlaylists: [], ...JSON.parse(raw) }
+    if (raw) return migrate({ sharedPlaylists: [], ...JSON.parse(raw) })
   } catch (e) {
     console.error('Could not read saved library, starting from seed.', e)
   }
@@ -32,6 +32,29 @@ function load() {
     sharedPlaylists: [], // snapshots of playlists shared with me
     annotations: {},
   }
+}
+
+// The bundled seed only applies on a device's very first visit — afterwards
+// localStorage wins. Adopt targeted seed improvements that existing installs
+// would otherwise never receive: newly attached audio, and the scrub of
+// lyrics stored in a legacy pre-Unicode encoding (unrenderable PUA glyphs).
+function migrate(state) {
+  const seedById = new Map(seed.map((k) => [k.id, k]))
+  state.kirtans = (state.kirtans || []).map((k) => {
+    const s = seedById.get(k.id)
+    if (!s) return k
+    let out = k
+    if (!out.audio && s.audio) out = { ...out, audio: s.audio }
+    if (out.lyrics?.gu && /[\uE000-\uF8FF]/.test(out.lyrics.gu)) {
+      out = {
+        ...out,
+        lyrics: { ...out.lyrics, gu: s.lyrics.gu },
+        title: { ...out.title, gu: s.title.gu },
+      }
+    }
+    return out
+  })
+  return state
 }
 
 function save(state) {
@@ -202,14 +225,16 @@ export function useStore() {
     },
 
     // ---- cloud sync hooks ----
-    // Replace the library with the cloud copy, but keep any audio recordings
-    // attached on this device (IndexedDB blobs are device-local by design).
+    // Replace the library with the cloud copy, but never let a cloud row
+    // without audio strip audio this device already knows about (device
+    // recordings are local by design; bundled demo audio may predate the
+    // cloud copy).
     replaceKirtans(kirtans) {
       update((s) => {
         const localById = new Map(s.kirtans.map((k) => [k.id, k]))
         s.kirtans = kirtans.map((k) => {
           const local = localById.get(k.id)
-          return !k.audio && local?.audio?.blobId ? { ...k, audio: local.audio } : k
+          return !k.audio && local?.audio ? { ...k, audio: local.audio } : k
         })
         return s
       })
