@@ -6,6 +6,7 @@ import KirtanView from './components/KirtanView'
 import Editor from './components/Editor'
 import Playlists, { PlaylistDetail } from './components/Playlists'
 import Notes from './components/Notes'
+import PresetManager from './components/PresetManager'
 import Settings from './components/Settings'
 import { usePlayer, MiniPlayer, FullPlayer } from './components/Player'
 import { BookOpen, Bookmark, Music, Cog } from './components/icons'
@@ -215,6 +216,7 @@ export default function App() {
           theme={theme}
           setTheme={setTheme}
           onAdd={() => push({ name: 'edit', id: null })}
+          onManagePresets={() => push({ name: 'presets' })}
         />
       </TabPanel>
 
@@ -271,6 +273,14 @@ export default function App() {
                 if (stackRef.current.length >= 2) backTwice()
                 else back()
               }}
+            />
+          )}
+          {v.name === 'presets' && (
+            <PresetManager
+              state={state}
+              actions={editorActions}
+              script={script}
+              onBack={back}
             />
           )}
         </StackPage>

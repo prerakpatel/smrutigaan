@@ -1,22 +1,8 @@
 import { useMemo, useState } from 'react'
 import { buildHaystack, matchesQuery, findLineMatches } from '../lib/text'
+import { PRESETS } from '../lib/presets'
 import Sheet from './Sheet'
 import { Check, Heart, Music, SearchIcon, X, ChevronRight } from './icons'
-
-// Canonical preset lists, in display order. Membership is category tags on
-// each kirtan, so curating a preset = tagging kirtans with its name.
-const PRESETS = [
-  'Manglacharan',
-  'Nand-pankti',
-  'Swamishree kirtan',
-  'Guruhari kirtan',
-  'Yuva kirtan',
-  'Baal kirtan',
-  'Utsav kirtan',
-  'Prarthana',
-  'Stavan',
-  'Doha-chhand',
-]
 
 export default function Library({ state, actions, script, onOpen }) {
   const [query, setQuery] = useState('')

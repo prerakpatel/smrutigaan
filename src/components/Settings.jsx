@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Minus, Plus } from './icons'
+import { Bookmark, Minus, Plus } from './icons'
 
 export default function Settings({
   state,
@@ -12,6 +12,7 @@ export default function Settings({
   theme,
   setTheme,
   onAdd,
+  onManagePresets,
 }) {
   const [email, setEmail] = useState('')
   const download = () => {
@@ -171,6 +172,14 @@ export default function Settings({
               <span className="flex items-center gap-2.5 font-medium text-accent-bright">
                 <Plus size={18} sw={2} />
                 Add a new kirtan
+              </span>
+            </RowButton>
+          )}
+          {cloud.isEditor && (
+            <RowButton onClick={onManagePresets}>
+              <span className="flex items-center gap-2.5 font-medium text-accent-bright">
+                <Bookmark size={18} />
+                Manage preset lists
               </span>
             </RowButton>
           )}
