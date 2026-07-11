@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { PRESETS } from '../lib/presets'
 import { buildHaystack, matchesQuery } from '../lib/text'
 import { Check, ChevronLeft, SearchIcon, X } from './icons'
@@ -19,9 +19,26 @@ export default function PresetManager({ state, actions, script, onBack }) {
   const inPreset = (k) => (k.categories || []).includes(preset)
   const count = state.kirtans.filter(inPreset).length
 
-  const results = state.kirtans
-    .filter((k) => matchesQuery(haystacks.get(k.id), query))
-    .sort((a, b) => (inPreset(b) ? 1 : 0) - (inPreset(a) ? 1 : 0))
+  // Latest data, read without re-triggering the frozen order below.
+  const dataRef = useRef()
+  dataRef.current = { kirtans: state.kirtans, haystacks }
+
+  // Row order is a SNAPSHOT taken only when the preset or search changes —
+  // never on a toggle. So tagging a kirtan flips its checkbox in place and
+  // your scroll position holds; members are floated to the top only on that
+  // initial snapshot for at-a-glance review.
+  const orderedIds = useMemo(() => {
+    const { kirtans, haystacks } = dataRef.current
+    const has = (k) => (k.categories || []).includes(preset)
+    return kirtans
+      .filter((k) => matchesQuery(haystacks.get(k.id), query))
+      .sort((a, b) => (has(b) ? 1 : 0) - (has(a) ? 1 : 0))
+      .map((k) => k.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset, query])
+
+  const byId = new Map(state.kirtans.map((k) => [k.id, k]))
+  const results = orderedIds.map((id) => byId.get(id)).filter(Boolean)
 
   const toggle = (k) => {
     const cats = new Set(k.categories || [])
