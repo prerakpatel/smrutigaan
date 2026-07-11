@@ -40,27 +40,37 @@ export default function Playlists({ state, actions, script, onOpenPlaylist }) {
           </button>
         </div>
 
-        {shared.length > 0 && (
-          <div className="mt-4 flex rounded-full bg-surface p-1 text-[14px]">
-            <SegTab active={view === 'mine'} onClick={() => setView('mine')}>
-              My lists
-            </SegTab>
-            <SegTab active={view === 'shared'} onClick={() => setView('shared')}>
-              Shared with me
-            </SegTab>
-          </div>
-        )}
+        <div className="mt-4 flex rounded-full bg-surface p-1 text-[14px]">
+          <SegTab active={view === 'mine'} onClick={() => setView('mine')}>
+            My lists
+          </SegTab>
+          <SegTab active={view === 'shared'} onClick={() => setView('shared')}>
+            Shared with me
+          </SegTab>
+        </div>
       </div>
 
       <div className="mt-4 px-4">
         {list.length === 0 ? (
           <div className="mt-16 text-center text-sm text-muted">
             <Music size={36} className="mx-auto text-line" />
-            <p className="mt-3">No playlists yet.</p>
-            <p className="mt-1">
-              Tap <span className="font-medium text-snow">+</span> to create one, then add kirtans
-              from any kirtan page.
-            </p>
+            {view === 'shared' ? (
+              <>
+                <p className="mt-3">Nothing shared with you yet.</p>
+                <p className="mx-auto mt-1 max-w-64">
+                  When someone sends you a playlist link, it lands here — and you can save a copy
+                  to My lists.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-3">No playlists yet.</p>
+                <p className="mt-1">
+                  Tap <span className="font-medium text-snow">+</span> to create one, then add
+                  kirtans from any kirtan page.
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <ul className="divide-y divide-line">

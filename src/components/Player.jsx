@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { getAudio } from '../lib/audioStore'
-import { ChevronDown, Music, Pause, Play, SkipBack, SkipForward, X } from './icons'
+import {
+  ChevronDown,
+  Music,
+  Pause,
+  Play,
+  Repeat,
+  RotateCcw,
+  RotateCw,
+  SkipBack,
+  SkipForward,
+  X,
+} from './icons'
+
+const RATE_KEY = 'smruti-gaan:rate'
+const SKIP_KEY = 'smruti-gaan:skip'
 
 // One <audio> element for the whole app, owned here and never unmounted, so
 // playback survives any navigation — backing out of a kirtan, searching,
@@ -14,6 +28,9 @@ export function usePlayer(kirtans) {
   const [queue, setQueue] = useState([])
   const [playing, setPlaying] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [rate, setRateState] = useState(() => +localStorage.getItem(RATE_KEY) || 1)
+  const [loop, setLoopState] = useState(false)
+  const rateRef = useRef(rate)
 
   const ensureAudio = () => {
     if (!audioRef.current) audioRef.current = new Audio()
@@ -42,6 +59,7 @@ export function usePlayer(kirtans) {
       }
     }
     a.src = src
+    a.playbackRate = rateRef.current // some engines reset the rate per source
     setCurrent(id)
     if (autoplay) a.play().catch(() => {})
   }
@@ -110,6 +128,21 @@ export function usePlayer(kirtans) {
     },
     seek(t) {
       ensureAudio().currentTime = t
+    },
+    rate,
+    setRate(r) {
+      rateRef.current = r
+      ensureAudio().playbackRate = r
+      try {
+        localStorage.setItem(RATE_KEY, String(r))
+      } catch {}
+      setRateState(r)
+    },
+    loop,
+    toggleLoop() {
+      const a = ensureAudio()
+      a.loop = !a.loop
+      setLoopState(a.loop)
     },
     close() {
       const a = ensureAudio()
@@ -245,12 +278,28 @@ export function MiniPlayer({ player, script, docked = true }) {
 }
 
 // Full-screen Now Playing.
+const RATES = [1, 1.25, 1.5, 2, 0.75]
+const SKIPS = { 10: 15, 15: 30, 30: 10 }
+
 export function FullPlayer({ player, script, onOpenLyrics }) {
   const k = player.nowPlaying
   const { time, dur } = useProgress(player)
+  const [skipSecs, setSkipSecs] = useState(() => +localStorage.getItem(SKIP_KEY) || 15)
   if (!k) return null
   const { main, sub } = titles(k, script)
   const pct = dur ? Math.min(100, (time / dur) * 100) : 0
+
+  const cycleSkip = () => {
+    const next = SKIPS[skipSecs] || 15
+    try {
+      localStorage.setItem(SKIP_KEY, String(next))
+    } catch {}
+    setSkipSecs(next)
+  }
+  const cycleRate = () => {
+    const next = RATES[(RATES.indexOf(player.rate) + 1) % RATES.length]
+    player.setRate(next)
+  }
 
   return (
     <div className="animate-sheet-up fixed inset-0 z-[80] flex flex-col overflow-y-auto bg-night">
@@ -295,21 +344,31 @@ export function FullPlayer({ player, script, onOpenLyrics }) {
             aria-label="Seek"
             className="player-range mt-5 w-full"
             style={{
-              background: `linear-gradient(to right, #A78BFA ${pct}%, rgba(255,255,255,0.15) ${pct}%)`,
+              background: `linear-gradient(to right, rgb(var(--c-accent-bright)) ${pct}%, rgb(var(--c-snow) / 0.18) ${pct}%)`,
             }}
           />
           <div className="mt-1.5 flex justify-between text-[11px] font-medium text-snow/50">
             <span>{fmt(time)}</span>
-            <span>{fmt(dur)}</span>
+            <span>-{fmt(Math.max(0, (dur || 0) - time))}</span>
           </div>
 
-          <div className="mt-3 flex items-center justify-center gap-8">
+          <div className="mt-3 flex items-center justify-center gap-4">
             <button
               onClick={player.prev}
               aria-label="Previous"
               className="flex h-12 w-12 items-center justify-center text-snow active:scale-95"
             >
-              <SkipBack size={30} />
+              <SkipBack size={26} />
+            </button>
+            <button
+              onClick={() => player.seek(Math.max(0, time - skipSecs))}
+              aria-label={`Back ${skipSecs} seconds`}
+              className="relative flex h-12 w-12 items-center justify-center text-snow active:scale-95"
+            >
+              <RotateCcw size={32} sw={1.8} />
+              <span className="absolute inset-0 flex items-center justify-center pt-[3px] text-[9px] font-bold">
+                {skipSecs}
+              </span>
             </button>
             <button
               onClick={player.toggle}
@@ -319,25 +378,68 @@ export function FullPlayer({ player, script, onOpenLyrics }) {
               {player.playing ? <Pause size={30} /> : <Play size={30} className="ml-1" />}
             </button>
             <button
+              onClick={() => player.seek(Math.min(dur || time + skipSecs, time + skipSecs))}
+              aria-label={`Forward ${skipSecs} seconds`}
+              className="relative flex h-12 w-12 items-center justify-center text-snow active:scale-95"
+            >
+              <RotateCw size={32} sw={1.8} />
+              <span className="absolute inset-0 flex items-center justify-center pt-[3px] text-[9px] font-bold">
+                {skipSecs}
+              </span>
+            </button>
+            <button
               onClick={player.next}
               aria-label="Next"
               className={`flex h-12 w-12 items-center justify-center active:scale-95 ${
                 player.hasNext ? 'text-snow' : 'text-snow/30'
               }`}
             >
-              <SkipForward size={30} />
+              <SkipForward size={26} />
             </button>
           </div>
 
-          <button
-            onClick={() => {
-              player.setExpanded(false)
-              onOpenLyrics(k.id)
-            }}
-            className="mx-auto mt-5 flex min-h-[40px] items-center justify-center rounded-full bg-veil/10 px-5 text-sm font-medium text-snow active:bg-veil/20"
-          >
-            View lyrics
-          </button>
+          {/* speed · jump size · repeat-one · lyrics */}
+          <div className="mt-4 flex items-center justify-center gap-2.5">
+            <button
+              onClick={cycleRate}
+              aria-label="Playback speed"
+              className={`flex min-h-[36px] min-w-[54px] items-center justify-center rounded-full px-3 text-[13px] font-semibold transition-colors ${
+                player.rate !== 1
+                  ? 'bg-accent-soft text-accent-bright'
+                  : 'bg-veil/10 text-snow active:bg-veil/20'
+              }`}
+            >
+              {player.rate}×
+            </button>
+            <button
+              onClick={cycleSkip}
+              aria-label="Change jump length"
+              className="flex min-h-[36px] items-center justify-center rounded-full bg-veil/10 px-3 text-[13px] font-medium text-snow active:bg-veil/20"
+            >
+              Jump {skipSecs}s
+            </button>
+            <button
+              onClick={player.toggleLoop}
+              aria-label={player.loop ? 'Repeat off' : 'Repeat this kirtan'}
+              aria-pressed={player.loop}
+              className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+                player.loop
+                  ? 'bg-accent-soft text-accent-bright'
+                  : 'bg-veil/10 text-snow active:bg-veil/20'
+              }`}
+            >
+              <Repeat size={16} />
+            </button>
+            <button
+              onClick={() => {
+                player.setExpanded(false)
+                onOpenLyrics(k.id)
+              }}
+              className="flex min-h-[36px] items-center justify-center rounded-full bg-veil/10 px-3.5 text-[13px] font-medium text-snow active:bg-veil/20"
+            >
+              Lyrics
+            </button>
+          </div>
         </div>
       </div>
     </div>
