@@ -255,7 +255,7 @@ export default function App() {
                   active ? 'text-snow' : 'text-muted active:text-snow'
                 }`}
               >
-                <Icon size={24} sw={active ? 2.1 : 1.8} />
+                <Icon size={24} sw={active ? 2.5 : 2.1} />
                 <span className={`text-[10px] leading-none ${active ? 'font-semibold' : ''}`}>
                   {label}
                 </span>

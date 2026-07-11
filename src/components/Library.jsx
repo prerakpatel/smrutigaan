@@ -99,9 +99,10 @@ export default function Library({ state, actions, script, onOpen }) {
         <ul className="mt-1 divide-y divide-line">
           {results.map((k) => {
             const fav = state.favorites.includes(k.id)
-            const hasNotes =
-              !!state.annotations[k.id]?.note ||
-              Object.keys(state.annotations[k.id]?.lines || {}).length > 0
+            // flag actual notes only — highlights alone don't earn a badge
+            const ann = state.annotations[k.id]
+            const hasNote =
+              !!ann?.note || Object.values(ann?.lines || {}).some((v) => v.note)
             // With an active search, surface the lyric lines that actually
             // matched (title/category-only hits produce none).
             const snips =
@@ -121,7 +122,7 @@ export default function Library({ state, actions, script, onOpen }) {
                         <Music size={11} className="mr-1.5 inline align-[-1px] text-accent-bright" />
                       )}
                       {script === 'gu' ? k.title.en : k.title.gu}
-                      {hasNotes && <span className="ml-2 text-punch">· annotated</span>}
+                      {hasNote && <span className="ml-2 text-accent-bright">· note</span>}
                     </span>
                     {snips && snips.lines.length > 0 && (
                       <span className="mt-1.5 block space-y-1 border-l-2 border-accent/40 pl-2.5">

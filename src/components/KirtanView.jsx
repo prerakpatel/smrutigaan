@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toLines } from '../lib/text'
+import { useScrolledPast } from '../lib/useScrolled'
 import Sheet, { SheetRow } from './Sheet'
 import {
+  Bookmark,
   ChevronLeft,
   Copy,
   Heart,
@@ -44,6 +46,8 @@ export default function KirtanView({
   const [showPlaylists, setShowPlaylists] = useState(false)
   const [showKirtanNote, setShowKirtanNote] = useState(false)
   const [focusMode, setFocusMode] = useState(false)
+  // Top bar is transparent over the hero gradient until the header scrolls away.
+  const [sentinelRef, scrolled] = useScrolledPast()
   // Arriving from a search result: scroll to the matched line and flash it.
   const [flashLine, setFlashLine] = useState(initialLine ?? null)
   useEffect(() => {
@@ -134,17 +138,31 @@ export default function KirtanView({
   const allSelectedLit =
     selected.length > 0 && selected.every((i) => ann.lines[i]?.highlight)
 
+  // Every line covered by some note (anchor or span) gets a dotted underline.
+  const notedLines = new Set()
+  Object.entries(ann.lines).forEach(([i, v]) => {
+    if (v.note) (v.span || [+i]).forEach((x) => notedLines.add(x))
+  })
+
   const viewedEntry = viewNote !== null ? ann.lines[viewNote] : null
   const viewedSpan = viewedEntry ? viewedEntry.span || [viewNote] : []
   const viewedLit = viewedSpan.length > 0 && viewedSpan.every((i) => ann.lines[i]?.highlight)
 
   return (
     <article className="relative mx-auto max-w-2xl">
-      {/* Hero wash — a soft gradient bleeding down from the top, album-page style */}
+      {/* Hero wash — flows under the (initially transparent) top bar, so the
+          gradient owns the whole top of the page with no seam */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-accent/25 via-fuchsia-500/[0.07] to-transparent" />
 
-      {/* Pinned nav bar */}
-      <div className="pt-safe sticky top-0 z-20 bg-night/85 backdrop-blur-xl">
+      {/* scroll sentinel: once this leaves the viewport, the bar solidifies */}
+      <div ref={sentinelRef} aria-hidden="true" className="absolute top-0 h-10 w-px" />
+
+      {/* Pinned nav bar — transparent at rest, blurred once scrolled */}
+      <div
+        className={`pt-safe sticky top-0 z-20 transition-colors duration-300 ${
+          scrolled ? 'bg-night/95 backdrop-blur-xl' : 'bg-transparent'
+        }`}
+      >
         <div className="flex h-12 items-center px-1">
           <button
             onClick={onBack}
@@ -153,7 +171,11 @@ export default function KirtanView({
           >
             <ChevronLeft size={26} sw={2} />
           </button>
-          <p className="min-w-0 flex-1 truncate px-1 text-center font-lyrics text-[15px] font-medium">
+          <p
+            className={`min-w-0 flex-1 truncate px-1 text-center font-lyrics text-[15px] font-medium transition-opacity duration-300 ${
+              scrolled ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
             {title}
           </p>
           <button
@@ -203,6 +225,18 @@ export default function KirtanView({
                 ))}
               </div>
             )}
+            {/* Root kirtan note, surfaced where you'll actually see it */}
+            {ann.note && (
+              <button
+                onClick={() => setShowKirtanNote(true)}
+                className="mt-3 flex w-full items-start gap-2 rounded-xl bg-accent-soft/80 px-3 py-2 text-left active:opacity-80"
+              >
+                <Bookmark size={14} className="mt-0.5 shrink-0 text-accent-bright" />
+                <span className="line-clamp-2 min-w-0 text-[13px] italic leading-snug text-accent-bright">
+                  {ann.note}
+                </span>
+              </button>
+            )}
           </div>
           {kirtan.audio && (
             <button
@@ -251,6 +285,7 @@ export default function KirtanView({
                 domId={`kline-${id}-${l.index}`}
                 flash={flashLine === l.index}
                 selected={selected.includes(l.index)}
+                noted={notedLines.has(l.index)}
                 annotation={ann.lines[l.index]}
                 onTap={() => toggleSelect(l.index)}
                 onOpenNote={() => setViewNote(l.index)}
@@ -259,25 +294,7 @@ export default function KirtanView({
           )}
         </div>
 
-        {/* Kirtan-level note */}
-        <section className="mb-6 mt-10 rounded-2xl border border-veil/5 bg-surface p-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[11px] uppercase tracking-[0.15em] text-muted">
-              Note on this kirtan
-            </h3>
-            <button
-              onClick={() => setShowKirtanNote(true)}
-              className="-my-1 flex min-h-[36px] items-center text-sm font-medium text-accent-bright"
-            >
-              {ann.note ? 'Edit' : 'Add note'}
-            </button>
-          </div>
-          {ann.note && (
-            <p className="mt-1 whitespace-pre-wrap text-sm italic leading-relaxed text-accent-bright">
-              {ann.note}
-            </p>
-          )}
-        </section>
+        <div className="h-8" />
       </div>
 
       {/* ⋯ action sheet */}
@@ -290,6 +307,15 @@ export default function KirtanView({
           }}
         >
           Add to playlist
+        </SheetRow>
+        <SheetRow
+          icon={<Bookmark size={20} />}
+          onClick={() => {
+            setShowActions(false)
+            setShowKirtanNote(true)
+          }}
+        >
+          {ann.note ? 'Edit kirtan note' : 'Add kirtan note'}
         </SheetRow>
         <SheetRow
           icon={<Pencil size={20} />}
@@ -496,6 +522,7 @@ export default function KirtanView({
           title={title}
           lines={lines}
           ann={ann}
+          notedLines={notedLines}
           fontScale={fontScale}
           onOpenNote={(anchor) => setViewNote(anchor)}
           onClose={() => setFocusMode(false)}
@@ -521,7 +548,7 @@ function ScriptSeg({ active, onClick, children }) {
 // The line itself only ever toggles selection; the pencil chip (its own
 // button, its own hit area) is the sole way in to the note — so note taps
 // can't spill onto neighboring lines.
-function LyricLine({ line, domId, flash, selected, annotation, onTap, onOpenNote }) {
+function LyricLine({ line, domId, flash, selected, noted, annotation, onTap, onOpenNote }) {
   const highlighted = annotation?.highlight
   const note = annotation?.note
 
@@ -531,7 +558,11 @@ function LyricLine({ line, domId, flash, selected, annotation, onTap, onOpenNote
         onClick={onTap}
         className={`-ml-2 min-w-0 flex-1 select-none rounded-md py-0.5 pl-2 text-left transition-all ${
           highlighted ? 'glow' : 'text-snow/90'
-        } ${selected ? 'bg-veil/10 ring-1 ring-inset ring-snow/30' : ''}`}
+        } ${selected ? 'bg-veil/10 ring-1 ring-inset ring-snow/30' : ''} ${
+          noted
+            ? 'underline decoration-accent-bright/60 decoration-dotted decoration-2 underline-offset-[7px]'
+            : ''
+        }`}
       >
         {line.text}
       </button>
@@ -619,7 +650,7 @@ function BarBtn({ icon, label, onClick, accent = false, disabled = false }) {
 // frosted wash. Highlights can be toggled; noted lines stay tappable. Rendered
 // through a portal so the tab bar and mini player can't paint over it, and the
 // screen is kept awake while it's open (Wake Lock).
-function FocusView({ title, lines, ann, fontScale, onOpenNote, onClose }) {
+function FocusView({ title, lines, ann, notedLines, fontScale, onOpenNote, onClose }) {
   const [showHl, setShowHl] = useState(true)
 
   useEffect(() => {
@@ -680,6 +711,10 @@ function FocusView({ title, lines, ann, fontScale, onOpenNote, onClose }) {
                 key={l.key}
                 className={`-mx-2 select-none rounded-md px-2 py-1 ${
                   showHl && a?.highlight ? 'glow' : 'text-snow'
+                } ${
+                  notedLines.has(l.index)
+                    ? 'underline decoration-accent-bright/60 decoration-dotted decoration-2 underline-offset-8'
+                    : ''
                 }`}
               >
                 {l.text}

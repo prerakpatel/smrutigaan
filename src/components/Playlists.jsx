@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useScrolledPast } from '../lib/useScrolled'
 import Sheet, { SheetRow } from './Sheet'
 import {
   ChevronLeft,
@@ -96,6 +97,7 @@ export default function Playlists({ state, actions, script, onOpenPlaylist }) {
 export function PlaylistDetail({ state, actions, id, script, player, onOpen, onBack }) {
   const [showActions, setShowActions] = useState(false)
   const [renaming, setRenaming] = useState(false)
+  const [sentinelRef, scrolled] = useScrolledPast()
   const playlist = state.playlists.find((p) => p.id === id)
   const kirtanById = new Map(state.kirtans.map((k) => [k.id, k]))
   // The playable queue: playlist order, kirtans that actually have audio.
@@ -117,10 +119,15 @@ export function PlaylistDetail({ state, actions, id, script, player, onOpen, onB
 
   return (
     <div className="relative mx-auto max-w-2xl">
-      {/* Hero wash, album-page style */}
+      {/* Hero wash, album-page style — runs under the transparent top bar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-accent/25 via-fuchsia-500/[0.07] to-transparent" />
+      <div ref={sentinelRef} aria-hidden="true" className="absolute top-0 h-10 w-px" />
 
-      <div className="pt-safe sticky top-0 z-20 bg-night/85 backdrop-blur-xl">
+      <div
+        className={`pt-safe sticky top-0 z-20 transition-colors duration-300 ${
+          scrolled ? 'bg-night/95 backdrop-blur-xl' : 'bg-transparent'
+        }`}
+      >
         <div className="flex h-12 items-center px-1">
           <button
             onClick={onBack}
@@ -129,7 +136,11 @@ export function PlaylistDetail({ state, actions, id, script, player, onOpen, onB
           >
             <ChevronLeft size={26} sw={2} />
           </button>
-          <p className="min-w-0 flex-1 truncate px-1 text-center text-[15px] font-medium">
+          <p
+            className={`min-w-0 flex-1 truncate px-1 text-center text-[15px] font-medium transition-opacity duration-300 ${
+              scrolled ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
             {playlist.name}
           </p>
           <button
