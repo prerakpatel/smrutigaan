@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toLines } from '../lib/text'
 import Sheet, { SheetRow } from './Sheet'
 import {
@@ -19,6 +19,7 @@ export default function KirtanView({
   state,
   actions,
   id,
+  initialLine,
   script,
   setScript,
   fontScale,
@@ -32,6 +33,21 @@ export default function KirtanView({
   const [showActions, setShowActions] = useState(false)
   const [showPlaylists, setShowPlaylists] = useState(false)
   const [showKirtanNote, setShowKirtanNote] = useState(false)
+  // Arriving from a search result: scroll to the matched line and flash it.
+  const [flashLine, setFlashLine] = useState(initialLine ?? null)
+  useEffect(() => {
+    if (initialLine == null) return
+    const scroll = setTimeout(() => {
+      document
+        .getElementById(`kline-${id}-${initialLine}`)
+        ?.scrollIntoView({ block: 'center' })
+    }, 90) // let the page-in slide start first
+    const clear = setTimeout(() => setFlashLine(null), 2600)
+    return () => {
+      clearTimeout(scroll)
+      clearTimeout(clear)
+    }
+  }, [initialLine, id])
 
   if (!kirtan) {
     return (
@@ -176,6 +192,8 @@ export default function KirtanView({
               <LyricLine
                 key={l.key}
                 line={l}
+                domId={`kline-${id}-${l.index}`}
+                flash={flashLine === l.index}
                 annotation={ann.lines[l.index]}
                 onToggleHighlight={() => actions.toggleHighlight(id, l.index)}
                 onOpenNote={() => setLineSheet(l.index)}
@@ -300,12 +318,12 @@ function ScriptTab({ active, onClick, children }) {
   )
 }
 
-function LyricLine({ line, annotation, onToggleHighlight, onOpenNote }) {
+function LyricLine({ line, domId, flash, annotation, onToggleHighlight, onOpenNote }) {
   const highlighted = annotation?.highlight
   const note = annotation?.note
 
   return (
-    <div className="-mx-2 px-2">
+    <div id={domId} className={`-mx-2 px-2 ${flash ? 'search-flash' : ''}`}>
       <div className="flex items-baseline gap-1">
         <button
           onClick={onToggleHighlight}

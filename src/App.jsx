@@ -84,7 +84,8 @@ export default function App() {
     setTab(key)
   }
 
-  const openKirtan = (id) => push({ name: 'kirtan', id })
+  // line: optional lyric-line index to scroll to (search results pass the hit)
+  const openKirtan = (id, line) => push({ name: 'kirtan', id, line })
   // From the player: jump to the playing kirtan's lyrics unless already there.
   const openLyricsFor = (id) => {
     const top = stackRef.current[stackRef.current.length - 1]
@@ -138,6 +139,7 @@ export default function App() {
               state={state}
               actions={actions}
               id={v.id}
+              initialLine={v.line}
               script={script}
               setScript={setScript}
               fontScale={fontScale}
