@@ -2,6 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme tokens (RGB triplets so Tailwind alpha works). Dark is the default;
+   light overrides via data-theme, applied to <html> by App based on the
+   Appearance setting. */
+:root {
+  --c-night: 10 10 16;
+  --c-surface: 22 22 31;
+  --c-card: 30 30 41;
+  --c-snow: 246 245 250;
+  --c-muted: 142 142 163;
+  --c-line: 38 38 51;
+  --c-veil: 255 255 255;
+  --c-accent: 139 92 246;
+  --c-accent-bright: 167 139 250;
+  --c-accent-soft: 38 29 63;
+  --c-punch: 255 77 109;
+}
+[data-theme='light'] {
+  --c-night: 247 246 251;
+  --c-surface: 235 233 243;
+  --c-card: 255 255 255;
+  --c-snow: 23 21 31;
+  --c-muted: 104 102 122;
+  --c-line: 219 217 232;
+  --c-veil: 23 21 31;
+  --c-accent: 124 58 237;
+  --c-accent-bright: 109 40 217;
+  --c-accent-soft: 237 231 253;
+  --c-punch: 225 29 72;
+  color-scheme: light;
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
@@ -115,16 +146,16 @@
   width: 14px;
   height: 14px;
   border-radius: 9999px;
-  background: #f6f5fa;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  background: rgb(var(--c-snow));
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 .player-range::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border: none;
   border-radius: 9999px;
-  background: #f6f5fa;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  background: rgb(var(--c-snow));
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* Landing on a search hit: pulse the matched line, then fade out. */

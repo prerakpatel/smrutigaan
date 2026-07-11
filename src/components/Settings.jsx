@@ -7,6 +7,8 @@ export default function Settings({
   setScript,
   fontScale,
   setFontScale,
+  theme,
+  setTheme,
   onAdd,
 }) {
   const download = () => {
@@ -44,6 +46,19 @@ export default function Settings({
 
       <div className="mt-5 space-y-5 px-4">
         <Section title="Reading">
+          <Row label="Appearance">
+            <div className="flex rounded-full bg-night p-0.5 text-sm">
+              <Seg active={theme === 'dark'} onClick={() => setTheme('dark')}>
+                Dark
+              </Seg>
+              <Seg active={theme === 'light'} onClick={() => setTheme('light')}>
+                Light
+              </Seg>
+              <Seg active={theme === 'auto'} onClick={() => setTheme('auto')}>
+                Auto
+              </Seg>
+            </div>
+          </Row>
           <Row label="Default script">
             <div className="flex rounded-full bg-night p-0.5 text-sm">
               <Seg active={script === 'gu'} onClick={() => setScript('gu')}>
@@ -141,7 +156,7 @@ function Section({ title, children }) {
   return (
     <section>
       <h2 className="px-4 pb-1.5 text-[11px] uppercase tracking-[0.15em] text-muted">{title}</h2>
-      <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/5 bg-surface">
+      <div className="divide-y divide-veil/5 overflow-hidden rounded-2xl border border-veil/5 bg-surface">
         {children}
       </div>
     </section>

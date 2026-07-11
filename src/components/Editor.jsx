@@ -91,7 +91,7 @@ export default function Editor({ state, actions, id, onCancel, onSaved, onDelete
         </p>
 
         {/* Live extracted titles */}
-        <div className="mt-3 rounded-xl border border-white/5 bg-surface p-3 text-sm">
+        <div className="mt-3 rounded-xl border border-veil/5 bg-surface p-3 text-sm">
           <p className="font-lyrics text-base font-medium">
             {titleGu || <span className="text-muted">Gujarati title will appear here</span>}
           </p>

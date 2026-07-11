@@ -18,7 +18,7 @@ export default function Sheet({ open, onClose, title, expandable = false, childr
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true">
       <div className="animate-fade-in absolute inset-0 bg-black/70" onClick={onClose} />
       <div
-        className={`animate-sheet-up absolute inset-x-0 bottom-0 mx-auto max-w-2xl overflow-y-auto overscroll-contain border-t border-white/10 bg-surface shadow-2xl ${
+        className={`animate-sheet-up absolute inset-x-0 bottom-0 mx-auto max-w-2xl overflow-y-auto overscroll-contain border-t border-veil/10 bg-surface shadow-2xl ${
           full ? 'top-0 rounded-none' : 'max-h-[85dvh] rounded-t-3xl'
         }`}
       >
@@ -27,7 +27,7 @@ export default function Sheet({ open, onClose, title, expandable = false, childr
             full ? 'pt-safe rounded-none' : 'rounded-t-3xl pt-3'
           }`}
         >
-          {!full && <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />}
+          {!full && <div className="mx-auto h-1 w-10 rounded-full bg-veil/20" />}
           <div className="flex min-h-[36px] items-center justify-between pl-5 pr-2 pt-2">
             {title ? (
               <h3 className="font-display text-lg font-bold tracking-tight">{title}</h3>

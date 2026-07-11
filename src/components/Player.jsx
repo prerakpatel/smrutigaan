@@ -188,8 +188,9 @@ function titles(k, script) {
   return { main, sub }
 }
 
-// Docked above the tab bar; tap to expand into the full player.
-export function MiniPlayer({ player, script }) {
+// Docked above the tab bar on root screens; hugs the bottom edge on detail
+// pages where the tab bar is hidden. Tap to expand into the full player.
+export function MiniPlayer({ player, script, docked = true }) {
   const k = player.nowPlaying
   const { time, dur } = useProgress(player)
   if (!k) return null
@@ -197,9 +198,15 @@ export function MiniPlayer({ player, script }) {
   const pct = dur ? Math.min(100, (time / dur) * 100) : 0
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom,0px))] z-40">
+    <div
+      className={`fixed inset-x-0 z-40 ${
+        docked
+          ? 'bottom-[calc(60px+env(safe-area-inset-bottom,0px))]'
+          : 'bottom-[calc(10px+env(safe-area-inset-bottom,0px))]'
+      }`}
+    >
       <div className="mx-auto max-w-2xl px-2">
-        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-card/95 shadow-2xl shadow-black/50 backdrop-blur-xl">
+        <div className="relative overflow-hidden rounded-xl border border-veil/10 bg-card/95 shadow-2xl shadow-black/50 backdrop-blur-xl">
           <div className="flex items-center pr-1">
             <button
               onClick={() => player.setExpanded(true)}
@@ -228,7 +235,7 @@ export function MiniPlayer({ player, script }) {
               <X size={16} sw={2} />
             </button>
           </div>
-          <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/10">
+          <div className="absolute inset-x-0 bottom-0 h-0.5 bg-veil/10">
             <div className="h-full bg-accent-bright" style={{ width: `${pct}%` }} />
           </div>
         </div>
@@ -254,7 +261,7 @@ export function FullPlayer({ player, script, onOpenLyrics }) {
           <button
             onClick={() => player.setExpanded(false)}
             aria-label="Minimize player"
-            className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-snow active:bg-white/10"
+            className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-snow active:bg-veil/10"
           >
             <ChevronDown size={26} sw={2} />
           </button>
@@ -327,7 +334,7 @@ export function FullPlayer({ player, script, onOpenLyrics }) {
               player.setExpanded(false)
               onOpenLyrics(k.id)
             }}
-            className="mx-auto mt-5 flex min-h-[40px] items-center justify-center rounded-full bg-white/10 px-5 text-sm font-medium text-snow active:bg-white/20"
+            className="mx-auto mt-5 flex min-h-[40px] items-center justify-center rounded-full bg-veil/10 px-5 text-sm font-medium text-snow active:bg-veil/20"
           >
             View lyrics
           </button>

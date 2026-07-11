@@ -29,7 +29,11 @@ function loadNav() {
   try {
     const saved = JSON.parse(sessionStorage.getItem(NAV_KEY)) || {}
     const depth = window.history.state?.depth || 0
-    return { tab: saved.tab, stack: (saved.stack || []).slice(0, depth) }
+    return {
+      tab: saved.tab,
+      // restored pages must not replay the slide-in animation
+      stack: (saved.stack || []).slice(0, depth).map((v) => ({ ...v, restored: true })),
+    }
   } catch {
     return {}
   }
@@ -54,8 +58,9 @@ export default function App() {
   const [stack, setStack] = useState(nav.stack || []) // [{name:'kirtan'|'playlist'|'edit', id}]
   const [script, setScriptState] = useState(() => loadPrefs().script || 'gu')
   const [fontScale, setFontScaleState] = useState(() => loadPrefs().fontScale || 1)
+  const [theme, setThemeState] = useState(() => loadPrefs().theme || 'dark')
 
-  const prefs = useRef({ script, fontScale })
+  const prefs = useRef({ script, fontScale, theme })
   const savePrefs = (patch) => {
     prefs.current = { ...prefs.current, ...patch }
     try {
@@ -70,6 +75,26 @@ export default function App() {
     setFontScaleState(f)
     savePrefs({ fontScale: f })
   }
+  const setTheme = (t) => {
+    setThemeState(t)
+    savePrefs({ theme: t })
+  }
+
+  // Apply the theme to <html> (the CSS variables switch on data-theme) and
+  // keep the browser-chrome color in sync. "auto" follows the OS setting.
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: light)')
+    const apply = () => {
+      const resolved = theme === 'auto' ? (mq.matches ? 'light' : 'dark') : theme
+      document.documentElement.dataset.theme = resolved
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', resolved === 'light' ? '#F7F6FB' : '#0A0A10')
+    }
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [theme])
 
   const stackRef = useRef(stack)
   stackRef.current = stack
@@ -145,17 +170,20 @@ export default function App() {
           setScript={setScript}
           fontScale={fontScale}
           setFontScale={setFontScale}
+          theme={theme}
+          setTheme={setTheme}
           onAdd={() => push({ name: 'edit', id: null })}
         />
       </TabPanel>
 
-      {/* Page stack */}
+      {/* Page stack — the tab bar is hidden here, so detail pages only need
+          clearance for the mini player, not the tabs */}
       {stack.map((v, i) => (
         <StackPage
           key={`${v.name}-${v.id ?? 'new'}-${i}`}
           storageKey={`smruti-gaan:scroll:stack-${i}-${v.name}-${v.id ?? 'new'}`}
-          className={`animate-page-in fixed inset-0 overflow-y-auto overscroll-contain bg-night ${
-            v.name === 'edit' ? 'z-[60]' : `z-30 ${padBottom}`
+          className={`${v.restored ? '' : 'animate-page-in'} fixed inset-0 overflow-y-auto overscroll-contain bg-night ${
+            v.name === 'edit' ? 'z-[60]' : `z-30 ${player.current ? 'pb-28' : 'pb-10'}`
           }`}
         >
           {v.name === 'kirtan' && (
@@ -204,14 +232,18 @@ export default function App() {
         </StackPage>
       ))}
 
-      {/* Persistent audio player: mini bar above the tabs, full-screen when expanded */}
-      {player.current && !player.expanded && <MiniPlayer player={player} script={script} />}
+      {/* Persistent audio player: mini bar above the tabs (or at the bottom
+          edge on detail pages, where the tab bar is hidden) */}
+      {player.current && !player.expanded && (
+        <MiniPlayer player={player} script={script} docked={stack.length === 0} />
+      )}
       {player.current && player.expanded && (
         <FullPlayer player={player} script={script} onOpenLyrics={openLyricsFor} />
       )}
 
-      {/* Bottom tab bar */}
-      <nav className="pb-safe fixed inset-x-0 bottom-0 z-50 border-t border-white/5 bg-night/85 backdrop-blur-xl">
+      {/* Bottom tab bar — root screens only; detail pages get the space back */}
+      {stack.length === 0 && (
+        <nav className="pb-safe fixed inset-x-0 bottom-0 z-50 border-t border-veil/5 bg-night/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl">
           {TABS.map(({ key, label, Icon }) => {
             const active = key === tab && stack.length === 0
@@ -231,7 +263,8 @@ export default function App() {
             )
           })}
         </div>
-      </nav>
+        </nav>
+      )}
     </div>
   )
 }

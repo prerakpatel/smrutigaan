@@ -123,17 +123,6 @@ export default function KirtanView({
     return lines.slice(s, e + 1).map((l) => l.index)
   }
 
-  // The note covering a line: its own, or one anchored elsewhere whose span
-  // includes it (multi-line notes).
-  const noteAt = (idx) => {
-    const own = ann.lines[idx]
-    if (own?.note) return { anchor: idx, ...own }
-    for (const [k, v] of Object.entries(ann.lines)) {
-      if (v.note && v.span?.includes(idx)) return { anchor: +k, ...v }
-    }
-    return null
-  }
-
   const toggleSelect = (idx) =>
     setSelected((s) => (s.includes(idx) ? s.filter((i) => i !== idx) : [...s, idx]))
   const clearSelection = () => setSelected([])
@@ -144,14 +133,6 @@ export default function KirtanView({
       .join('\n')
   const allSelectedLit =
     selected.length > 0 && selected.every((i) => ann.lines[i]?.highlight)
-
-  // Tap behavior: lines carrying a note open it directly (the pencil mark is
-  // just the indicator); everything else toggles selection.
-  const tapLine = (idx) => {
-    const n = noteAt(idx)
-    if (n && selected.length === 0) setViewNote(n.anchor)
-    else toggleSelect(idx)
-  }
 
   const viewedEntry = viewNote !== null ? ann.lines[viewNote] : null
   const viewedSpan = viewedEntry ? viewedEntry.span || [viewNote] : []
@@ -215,7 +196,7 @@ export default function KirtanView({
                 {kirtan.categories.map((c) => (
                   <span
                     key={c}
-                    className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-snow/80"
+                    className="rounded-full bg-veil/10 px-2.5 py-1 text-[11px] font-medium text-snow/80"
                   >
                     {c}
                   </span>
@@ -240,16 +221,6 @@ export default function KirtanView({
           )}
         </header>
 
-        {/* Script flip — segmented control */}
-        <div className="mt-5 flex rounded-full bg-surface p-1 text-[15px]">
-          <ScriptTab active={script === 'gu'} onClick={() => setScript('gu')}>
-            ગુજરાતી
-          </ScriptTab>
-          <ScriptTab active={script === 'en'} onClick={() => setScript('en')}>
-            English
-          </ScriptTab>
-        </div>
-
         {otherScriptMissing && (
           <p className="mt-3 text-xs text-punch">
             No {script === 'gu' ? 'Gujarati' : 'transliteration'} text yet — showing the other
@@ -263,8 +234,8 @@ export default function KirtanView({
           </p>
         )}
 
-        {/* Lyrics: tap lines to build a selection; the floating toolbar
-            below acts on it. Lines with a note open it directly.
+        {/* Lyrics: tapping a line only ever selects it (the floating toolbar
+            acts on the selection); a line's note opens via its pencil chip.
             Annotations key off line index, shared across both scripts. */}
         <div
           className="mt-7 font-lyrics font-semibold leading-[1.75]"
@@ -281,14 +252,15 @@ export default function KirtanView({
                 flash={flashLine === l.index}
                 selected={selected.includes(l.index)}
                 annotation={ann.lines[l.index]}
-                onTap={() => tapLine(l.index)}
+                onTap={() => toggleSelect(l.index)}
+                onOpenNote={() => setViewNote(l.index)}
               />
             )
           )}
         </div>
 
         {/* Kirtan-level note */}
-        <section className="mb-6 mt-10 rounded-2xl border border-white/5 bg-surface p-4">
+        <section className="mb-6 mt-10 rounded-2xl border border-veil/5 bg-surface p-4">
           <div className="flex items-center justify-between">
             <h3 className="text-[11px] uppercase tracking-[0.15em] text-muted">
               Note on this kirtan
@@ -328,6 +300,17 @@ export default function KirtanView({
         >
           Edit lyrics
         </SheetRow>
+        <div className="flex min-h-[48px] items-center gap-3 rounded-xl px-3 py-2.5">
+          <span className="text-base">Script</span>
+          <div className="ml-auto flex rounded-full bg-card p-0.5 text-sm">
+            <ScriptSeg active={script === 'gu'} onClick={() => setScript('gu')}>
+              ગુજરાતી
+            </ScriptSeg>
+            <ScriptSeg active={script === 'en'} onClick={() => setScript('en')}>
+              English
+            </ScriptSeg>
+          </div>
+        </div>
         <SheetRow
           icon={<ShareIcon size={20} />}
           onClick={() => {
@@ -505,7 +488,6 @@ export default function KirtanView({
           lines={lines}
           ann={ann}
           fontScale={fontScale}
-          noteAt={noteAt}
           onOpenNote={(anchor) => setViewNote(anchor)}
           onClose={() => setFocusMode(false)}
         />
@@ -514,11 +496,11 @@ export default function KirtanView({
   )
 }
 
-function ScriptTab({ active, onClick, children }) {
+function ScriptSeg({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`min-h-[40px] flex-1 select-none rounded-full font-lyrics transition-all ${
+      className={`min-h-[36px] select-none rounded-full px-3.5 font-lyrics transition-all ${
         active ? 'bg-snow font-semibold text-night' : 'text-muted'
       }`}
     >
@@ -527,25 +509,34 @@ function ScriptTab({ active, onClick, children }) {
   )
 }
 
-function LyricLine({ line, domId, flash, selected, annotation, onTap }) {
+// The line itself only ever toggles selection; the pencil chip (its own
+// button, its own hit area) is the sole way in to the note — so note taps
+// can't spill onto neighboring lines.
+function LyricLine({ line, domId, flash, selected, annotation, onTap, onOpenNote }) {
   const highlighted = annotation?.highlight
   const note = annotation?.note
 
   return (
-    <div id={domId} className={`-mx-2 px-2 ${flash ? 'search-flash' : ''}`}>
+    <div id={domId} className={`-mx-2 flex items-start gap-1 px-2 ${flash ? 'search-flash' : ''}`}>
       <button
         onClick={onTap}
-        className={`-ml-2 w-full select-none rounded-md py-0.5 pl-2 pr-1 text-left transition-all ${
+        className={`-ml-2 min-w-0 flex-1 select-none rounded-md py-0.5 pl-2 text-left transition-all ${
           highlighted ? 'glow' : 'text-snow/90'
-        } ${selected ? 'bg-white/10 ring-1 ring-inset ring-snow/30' : ''}`}
+        } ${selected ? 'bg-veil/10 ring-1 ring-inset ring-snow/30' : ''}`}
       >
         {line.text}
-        {note && (
-          <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent/30 align-baseline">
-            <Pencil size={12} className="text-accent-bright" />
-          </span>
-        )}
       </button>
+      {note && (
+        <button
+          onClick={onOpenNote}
+          aria-label="View note on this line"
+          className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center self-start"
+        >
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/30">
+            <Pencil size={13} className="text-accent-bright" />
+          </span>
+        </button>
+      )}
     </div>
   )
 }
@@ -568,12 +559,12 @@ function SelectionBar({
     <div
       className={`fixed inset-x-0 z-40 ${
         lifted
-          ? 'bottom-[calc(130px+env(safe-area-inset-bottom,0px))]'
-          : 'bottom-[calc(64px+env(safe-area-inset-bottom,0px))]'
+          ? 'bottom-[calc(80px+env(safe-area-inset-bottom,0px))]'
+          : 'bottom-[calc(14px+env(safe-area-inset-bottom,0px))]'
       }`}
     >
       <div className="animate-sheet-up mx-auto max-w-2xl px-3">
-        <div className="flex items-center justify-between rounded-2xl border border-accent/40 bg-gradient-to-r from-[#211441]/95 via-card/95 to-[#3a1030]/95 px-1.5 py-1 shadow-2xl shadow-accent/25 backdrop-blur-xl">
+        <div className="flex items-center justify-between rounded-2xl border border-accent/40 bg-card/95 bg-gradient-to-r from-accent/20 via-transparent to-fuchsia-500/15 px-1.5 py-1 shadow-2xl shadow-accent/25 backdrop-blur-xl">
           <BarBtn
             icon={<Highlighter size={18} />}
             label={allLit ? 'Remove' : 'Highlight'}
@@ -584,7 +575,7 @@ function SelectionBar({
           <BarBtn icon={<Plus size={19} />} label="Stanza" onClick={onStanza} />
           <BarBtn icon={<Copy size={19} />} label="Copy" onClick={onCopy} />
           <BarBtn icon={<ShareIcon size={19} />} label="Share" onClick={onShare} />
-          <span className="mx-0.5 h-7 w-px bg-white/15" />
+          <span className="mx-0.5 h-7 w-px bg-veil/15" />
           <BarBtn
             icon={<X size={19} />}
             label={count === 1 ? '1 line' : `${count} lines`}
@@ -601,7 +592,7 @@ function BarBtn({ icon, label, onClick, accent = false, disabled = false }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className="flex min-w-[50px] select-none flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-snow transition-colors active:bg-white/10 disabled:opacity-30"
+      className="flex min-w-[50px] select-none flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-snow transition-colors active:bg-veil/10 disabled:opacity-30"
     >
       {accent ? (
         <span className="grad-brand -my-0.5 flex h-7 w-7 items-center justify-center rounded-full text-white">
@@ -619,7 +610,7 @@ function BarBtn({ icon, label, onClick, accent = false, disabled = false }) {
 // frosted wash. Highlights can be toggled; noted lines stay tappable. Rendered
 // through a portal so the tab bar and mini player can't paint over it, and the
 // screen is kept awake while it's open (Wake Lock).
-function FocusView({ title, lines, ann, fontScale, noteAt, onOpenNote, onClose }) {
+function FocusView({ title, lines, ann, fontScale, onOpenNote, onClose }) {
   const [showHl, setShowHl] = useState(true)
 
   useEffect(() => {
@@ -660,7 +651,7 @@ function FocusView({ title, lines, ann, fontScale, noteAt, onOpenNote, onClose }
           <button
             onClick={onClose}
             aria-label="Exit focus view"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-snow active:bg-white/20"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-veil/10 text-snow active:bg-veil/20"
           >
             <X size={20} sw={2} />
           </button>
@@ -675,22 +666,26 @@ function FocusView({ title, lines, ann, fontScale, noteAt, onOpenNote, onClose }
           {lines.map((l) => {
             if (l.type === 'break') return <div key={l.key} className="h-8" />
             const a = ann.lines[l.index]
-            const n = noteAt(l.index)
             return (
-              <button
+              <p
                 key={l.key}
-                onClick={() => n && onOpenNote(n.anchor)}
-                className={`-mx-2 block w-[calc(100%+16px)] select-none rounded-md px-2 py-1 text-left ${
+                className={`-mx-2 select-none rounded-md px-2 py-1 ${
                   showHl && a?.highlight ? 'glow' : 'text-snow'
                 }`}
               >
                 {l.text}
                 {a?.note && (
-                  <span className="ml-2.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent/30 align-baseline">
-                    <Pencil size={13} className="text-accent-bright" />
-                  </span>
+                  <button
+                    onClick={() => onOpenNote(l.index)}
+                    aria-label="View note on this line"
+                    className="ml-2.5 inline-flex h-8 w-8 items-center justify-center align-baseline"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/30">
+                      <Pencil size={13} className="text-accent-bright" />
+                    </span>
+                  </button>
                 )}
-              </button>
+              </p>
             )
           })}
         </div>
