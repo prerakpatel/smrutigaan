@@ -282,7 +282,7 @@ export function FullPlayer({ player, script, onOpenLyrics }) {
         </div>
 
         <div className="pb-[max(env(safe-area-inset-bottom),1.5rem)]">
-          <p className="truncate font-lyrics text-2xl font-extrabold tracking-tight">{main}</p>
+          <p className="truncate font-lyrics text-2xl font-bold tracking-tight">{main}</p>
           <p className="mt-1 truncate text-sm font-medium text-snow/60">{sub}</p>
 
           <input

@@ -29,10 +29,12 @@ export default {
       fontFamily: {
         display: ['Inter', 'system-ui', 'sans-serif'],
         ui: ['Inter', 'system-ui', 'sans-serif'],
-        // Lyrics stack, resolved per glyph: Latin (transliteration, digits,
-        // diacritics like ā/ṇ/ś) renders in Inter, and Gujarati falls through
-        // to Noto Sans Gujarati — both sans, matched weight, so the big-bold
-        // "lyrics screen" look holds when flipping scripts mid-kirtan.
+        // Lyrics stack, resolved per glyph: Latin from Inter (static faces,
+        // exercised by all UI text), Gujarati from the single preloaded
+        // variable face of Noto Sans Gujarati (declared font-weight 100 900,
+        // so every weight maps to that one face — per-weight face lazy
+        // loading is what produced "NO GLYPH" boxes on iOS). Keep lyric
+        // text at weight ≤700, the Gujarati font's real ceiling.
         lyrics: ['Inter', '"Noto Sans Gujarati"', 'system-ui', 'sans-serif'],
       },
     },

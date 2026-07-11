@@ -18,8 +18,12 @@
 
     <!-- Fonts are self-hosted (public/fonts) so the installed PWA renders
          correctly offline and never waits on a CDN. Regenerate with the
-         fetch script if families/weights change. -->
+         fetch script if families/weights change. The Gujarati faces are
+         preloaded: every screen shows Gujarati immediately, and without
+         these, iOS renders placeholder boxes from the fallback family
+         while the font downloads. -->
     <link rel="stylesheet" href="/fonts/fonts.css" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/safari-notosansgujarati-v27-wlpZgx_HC1ti5ViekvcxnhMlCVo3f5pv17ivlzsUB14gg1TMbXaYEK2BoVnhAg.woff2" />
   </head>
   <body>
     <div id="root"></div>

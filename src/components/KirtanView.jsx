@@ -207,7 +207,7 @@ export default function KirtanView({
       <div className="px-5">
         <header className="mt-4 flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="font-lyrics text-[30px] font-extrabold leading-tight tracking-tight">
+            <h2 className="font-lyrics text-[30px] font-bold leading-tight tracking-tight">
               {title}
             </h2>
             <p className="mt-1.5 text-sm font-medium text-snow/60">

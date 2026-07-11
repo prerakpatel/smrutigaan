@@ -82,19 +82,29 @@ export default function App() {
 
   // Apply the theme to <html> (the CSS variables switch on data-theme) and
   // keep the browser-chrome color in sync. "auto" follows the OS setting.
+  // Kirtan/playlist pages open with a violet hero wash at the very top, so
+  // the chrome color follows suit there — no seam between Safari's bar and
+  // the page.
+  const heroPage = ['kirtan', 'playlist'].includes(stack[stack.length - 1]?.name)
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: light)')
     const apply = () => {
       const resolved = theme === 'auto' ? (mq.matches ? 'light' : 'dark') : theme
       document.documentElement.dataset.theme = resolved
-      document
-        .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', resolved === 'light' ? '#F7F6FB' : '#0A0A10')
+      const color =
+        resolved === 'light'
+          ? heroPage
+            ? '#D8C7F7'
+            : '#F7F6FB'
+          : heroPage
+            ? '#2A1E49'
+            : '#0A0A10'
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color)
     }
     apply()
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)
-  }, [theme])
+  }, [theme, heroPage])
 
   const stackRef = useRef(stack)
   stackRef.current = stack
