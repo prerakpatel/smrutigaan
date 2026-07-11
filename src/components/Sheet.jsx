@@ -4,21 +4,48 @@
 // whose stacking context would otherwise trap them below the z-50 tab bar —
 // covering the sheet's bottom and stealing its taps.
 
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Maximize, Minimize } from './icons'
 
-export default function Sheet({ open, onClose, title, children }) {
+export default function Sheet({ open, onClose, title, expandable = false, children }) {
+  const [full, setFull] = useState(false)
+  useEffect(() => {
+    if (!open) setFull(false)
+  }, [open])
   if (!open) return null
   return createPortal(
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true">
       <div className="animate-fade-in absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="animate-sheet-up absolute inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-2xl overflow-y-auto overscroll-contain rounded-t-3xl border-t border-white/10 bg-surface shadow-2xl">
-        <div className="sticky top-0 z-10 rounded-t-3xl bg-surface pb-1 pt-3">
-          <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />
-          {title && (
-            <h3 className="mt-3 px-5 font-display text-lg font-bold tracking-tight">{title}</h3>
-          )}
+      <div
+        className={`animate-sheet-up absolute inset-x-0 bottom-0 mx-auto max-w-2xl overflow-y-auto overscroll-contain border-t border-white/10 bg-surface shadow-2xl ${
+          full ? 'top-0 rounded-none' : 'max-h-[85dvh] rounded-t-3xl'
+        }`}
+      >
+        <div
+          className={`sticky top-0 z-10 bg-surface pb-1 ${
+            full ? 'pt-safe rounded-none' : 'rounded-t-3xl pt-3'
+          }`}
+        >
+          {!full && <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />}
+          <div className="flex min-h-[36px] items-center justify-between pl-5 pr-2 pt-2">
+            {title ? (
+              <h3 className="font-display text-lg font-bold tracking-tight">{title}</h3>
+            ) : (
+              <span />
+            )}
+            {expandable && (
+              <button
+                onClick={() => setFull((f) => !f)}
+                aria-label={full ? 'Collapse sheet' : 'Expand sheet to full page'}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-muted active:bg-card"
+              >
+                {full ? <Minimize size={18} /> : <Maximize size={18} />}
+              </button>
+            )}
+          </div>
         </div>
-        <div className="px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-2">{children}</div>
+        <div className="px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-1">{children}</div>
       </div>
     </div>,
     document.body

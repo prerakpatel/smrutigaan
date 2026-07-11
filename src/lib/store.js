@@ -148,11 +148,16 @@ export function useStore() {
         return s
       })
     },
-    setLineNote(kirtanId, lineIndex, note) {
+    // A note is anchored to one line; `span` (optional, sorted) records the
+    // full group of lines it covers when written against a multi-line
+    // selection. Tapping any line in the span surfaces the note.
+    setLineNote(kirtanId, lineIndex, note, span) {
       update((s) => {
         const a = (s.annotations[kirtanId] ||= { note: '', lines: {} })
         const line = (a.lines[lineIndex] ||= { highlight: false, note: '' })
         line.note = note
+        if (note && span && span.length > 1) line.span = [...span].sort((x, y) => x - y)
+        else delete line.span
         if (!line.highlight && !line.note) delete a.lines[lineIndex]
         stampAndPrune(s, kirtanId)
         return s

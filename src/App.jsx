@@ -10,10 +10,26 @@ import { usePlayer, MiniPlayer, FullPlayer } from './components/Player'
 import { BookOpen, Bookmark, Music, Cog } from './components/icons'
 
 const PREFS_KEY = 'smruti-gaan:prefs'
+const NAV_KEY = 'smruti-gaan:nav'
 
 function loadPrefs() {
   try {
     return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}
+  } catch {
+    return {}
+  }
+}
+
+// Navigation survives a page refresh: the stack and active tab live in
+// sessionStorage (per-tab, so it can't leak into a fresh visit). The browser
+// keeps both the history entries and each entry's {depth} state across a
+// reload, so we clamp the restored stack to the current entry's depth and
+// back/forward keep working seamlessly.
+function loadNav() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(NAV_KEY)) || {}
+    const depth = window.history.state?.depth || 0
+    return { tab: saved.tab, stack: (saved.stack || []).slice(0, depth) }
   } catch {
     return {}
   }
@@ -33,8 +49,9 @@ const TABS = [
 export default function App() {
   const { state, actions } = useStore()
   const player = usePlayer(state.kirtans)
-  const [tab, setTab] = useState('library')
-  const [stack, setStack] = useState([]) // [{name:'kirtan'|'playlist'|'edit', id}]
+  const nav = useRef(loadNav()).current
+  const [tab, setTab] = useState(nav.tab || 'library')
+  const [stack, setStack] = useState(nav.stack || []) // [{name:'kirtan'|'playlist'|'edit', id}]
   const [script, setScriptState] = useState(() => loadPrefs().script || 'gu')
   const [fontScale, setFontScaleState] = useState(() => loadPrefs().fontScale || 1)
 
@@ -56,6 +73,12 @@ export default function App() {
 
   const stackRef = useRef(stack)
   stackRef.current = stack
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(NAV_KEY, JSON.stringify({ tab, stack }))
+    } catch {}
+  }, [tab, stack])
 
   useEffect(() => {
     const onPop = (e) => {
@@ -128,8 +151,9 @@ export default function App() {
 
       {/* Page stack */}
       {stack.map((v, i) => (
-        <div
+        <StackPage
           key={`${v.name}-${v.id ?? 'new'}-${i}`}
+          storageKey={`smruti-gaan:scroll:stack-${i}-${v.name}-${v.id ?? 'new'}`}
           className={`animate-page-in fixed inset-0 overflow-y-auto overscroll-contain bg-night ${
             v.name === 'edit' ? 'z-[60]' : `z-30 ${padBottom}`
           }`}
@@ -177,7 +201,7 @@ export default function App() {
               }}
             />
           )}
-        </div>
+        </StackPage>
       ))}
 
       {/* Persistent audio player: mini bar above the tabs, full-screen when expanded */}
@@ -212,11 +236,49 @@ export default function App() {
   )
 }
 
+// Scroll position saved to sessionStorage (rAF-throttled) and restored on
+// mount, so a page refresh doesn't dump the user back to the top.
+function usePersistentScroll(key) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.scrollTop = +sessionStorage.getItem(key) || 0
+    let raf = 0
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        try {
+          sessionStorage.setItem(key, String(el.scrollTop))
+        } catch {}
+      })
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(raf)
+    }
+  }, [key])
+  return ref
+}
+
+function StackPage({ storageKey, className, children }) {
+  const ref = usePersistentScroll(storageKey)
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  )
+}
+
 // Kept mounted and merely hidden so each tab retains its scroll position,
 // like native tab controllers do.
 function TabPanel({ id, active, padBottom, children }) {
+  const ref = usePersistentScroll(`smruti-gaan:scroll:${id}`)
   return (
     <div
+      ref={ref}
       id={id}
       className={`${padBottom} absolute inset-0 overflow-y-auto overscroll-contain ${
         active ? '' : 'invisible pointer-events-none'
