@@ -20,7 +20,8 @@ const STORAGE_KEY = 'smruti-gaan:v1'
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    // spread over defaults so states saved by older versions gain new keys
+    if (raw) return { sharedPlaylists: [], ...JSON.parse(raw) }
   } catch (e) {
     console.error('Could not read saved library, starting from seed.', e)
   }
@@ -28,6 +29,7 @@ function load() {
     kirtans: seed,
     favorites: [],
     playlists: [],
+    sharedPlaylists: [], // snapshots of playlists shared with me
     annotations: {},
   }
 }
@@ -111,6 +113,33 @@ export function useStore() {
         return s
       })
     },
+    // copy a shared playlist into My lists
+    importPlaylist(name, kirtanIds) {
+      const id = newId()
+      update((s) => {
+        s.playlists.push({ id, name, kirtanIds: [...kirtanIds] })
+        return s
+      })
+      return id
+    },
+    addSharedPlaylist(snap) {
+      update((s) => {
+        s.sharedPlaylists = [...s.sharedPlaylists.filter((p) => p.id !== snap.id), snap]
+        return s
+      })
+    },
+    removeSharedPlaylist(id) {
+      update((s) => {
+        s.sharedPlaylists = s.sharedPlaylists.filter((p) => p.id !== id)
+        return s
+      })
+    },
+    setSharedPlaylists(list) {
+      update((s) => {
+        s.sharedPlaylists = list
+        return s
+      })
+    },
     togglePlaylistItem(playlistId, kirtanId) {
       update((s) => {
         const p = s.playlists.find((p) => p.id === playlistId)
@@ -185,11 +214,12 @@ export function useStore() {
         return s
       })
     },
-    applyUserData({ favorites, playlists, annotations }) {
+    applyUserData({ favorites, playlists, annotations, sharedPlaylists }) {
       update((s) => {
         if (favorites) s.favorites = favorites
         if (playlists) s.playlists = playlists
         if (annotations) s.annotations = annotations
+        if (sharedPlaylists) s.sharedPlaylists = sharedPlaylists
         return s
       })
     },

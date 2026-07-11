@@ -1,22 +1,28 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useScrolledPast } from '../lib/useScrolled'
 import Sheet, { SheetRow } from './Sheet'
 import {
+  Bookmark,
   ChevronLeft,
   ChevronRight,
+  Copy,
   Ellipsis,
   Music,
   Pause,
   Pencil,
   Play,
   Plus,
+  ShareIcon,
   Trash,
   X,
 } from './icons'
 
 export default function Playlists({ state, actions, script, onOpenPlaylist }) {
   const [creating, setCreating] = useState(false)
+  const [view, setView] = useState('mine') // 'mine' | 'shared'
   const kirtanById = new Map(state.kirtans.map((k) => [k.id, k]))
+  const shared = state.sharedPlaylists || []
+  const list = view === 'shared' ? shared : state.playlists
 
   return (
     <div>
@@ -33,10 +39,21 @@ export default function Playlists({ state, actions, script, onOpenPlaylist }) {
             <Plus size={22} sw={2} />
           </button>
         </div>
+
+        {shared.length > 0 && (
+          <div className="mt-4 flex rounded-full bg-surface p-1 text-[14px]">
+            <SegTab active={view === 'mine'} onClick={() => setView('mine')}>
+              My lists
+            </SegTab>
+            <SegTab active={view === 'shared'} onClick={() => setView('shared')}>
+              Shared with me
+            </SegTab>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 px-4">
-        {state.playlists.length === 0 ? (
+        {list.length === 0 ? (
           <div className="mt-16 text-center text-sm text-muted">
             <Music size={36} className="mx-auto text-line" />
             <p className="mt-3">No playlists yet.</p>
@@ -47,7 +64,7 @@ export default function Playlists({ state, actions, script, onOpenPlaylist }) {
           </div>
         ) : (
           <ul className="divide-y divide-line">
-            {state.playlists.map((p) => {
+            {list.map((p) => {
               const first = p.kirtanIds.map((kid) => kirtanById.get(kid)).find(Boolean)
               return (
                 <li key={p.id}>
@@ -55,19 +72,27 @@ export default function Playlists({ state, actions, script, onOpenPlaylist }) {
                     onClick={() => onOpenPlaylist(p.id)}
                     className="-mx-2 flex w-full items-center gap-3 rounded-xl px-2 py-3.5 text-left transition-colors active:bg-surface"
                   >
-                    <span className="grad-brand flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-md shadow-fuchsia-500/20">
+                    <span
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-md ${
+                        view === 'shared'
+                          ? 'bg-gradient-to-br from-sky-500 to-violet-600 shadow-sky-500/20'
+                          : 'grad-brand shadow-fuchsia-500/20'
+                      }`}
+                    >
                       <Music size={22} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-base font-semibold">{p.name}</span>
                       <span className="mt-0.5 block truncate text-xs text-muted">
                         {p.kirtanIds.length} {p.kirtanIds.length === 1 ? 'kirtan' : 'kirtans'}
-                        {first &&
-                          ` · ${
-                            script === 'gu'
-                              ? first.title.gu || first.title.en
-                              : first.title.en || first.title.gu
-                          }`}
+                        {view === 'shared'
+                          ? p.owner && ` · from ${p.owner}`
+                          : first &&
+                            ` · ${
+                              script === 'gu'
+                                ? first.title.gu || first.title.en
+                                : first.title.en || first.title.gu
+                            }`}
                       </span>
                     </span>
                     <ChevronRight size={18} className="shrink-0 text-line" />
@@ -93,16 +118,47 @@ export default function Playlists({ state, actions, script, onOpenPlaylist }) {
   )
 }
 
-// Full-screen playlist page, pushed onto the navigation stack.
-export function PlaylistDetail({ state, actions, id, script, player, onOpen, onBack }) {
+// Full-screen playlist page, pushed onto the navigation stack. Handles both
+// my own playlists (editable, shareable) and ones shared with me (read-only,
+// copyable).
+export function PlaylistDetail({ state, actions, cloud, id, script, player, onOpen, onBack }) {
   const [showActions, setShowActions] = useState(false)
   const [renaming, setRenaming] = useState(false)
+  const [sharedByMe, setSharedByMe] = useState(false)
   const [sentinelRef, scrolled] = useScrolledPast()
-  const playlist = state.playlists.find((p) => p.id === id)
+  const own = state.playlists.find((p) => p.id === id)
+  const fromOthers = !own && (state.sharedPlaylists || []).find((p) => p.id === id)
+  const playlist = own || fromOthers
+  const readOnly = !own
   const kirtanById = new Map(state.kirtans.map((k) => [k.id, k]))
   // The playable queue: playlist order, kirtans that actually have audio.
   const audioIds = (playlist?.kirtanIds || []).filter((kid) => kirtanById.get(kid)?.audio)
   const queuePlaying = player.playing && audioIds.includes(player.current)
+
+  // Is my playlist currently published as a share?
+  useEffect(() => {
+    if (!own || !cloud.session) return
+    cloud.fetchSharedPlaylist(id).then((snap) => {
+      setSharedByMe(!!snap && snap.ownerId === cloud.session.user.id)
+    })
+  }, [id, !!cloud.session])
+
+  const shareIt = async () => {
+    setShowActions(false)
+    const url = await cloud.sharePlaylist(playlist)
+    if (!url) return
+    setSharedByMe(true)
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: playlist.name, url })
+      } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url)
+        alert('Share link copied to clipboard.')
+      } catch {}
+    }
+  }
 
   if (!playlist) {
     return (
@@ -166,6 +222,7 @@ export function PlaylistDetail({ state, actions, id, script, player, onOpen, onB
               {playlist.kirtanIds.length}{' '}
               {playlist.kirtanIds.length === 1 ? 'kirtan' : 'kirtans'}
               {audioIds.length > 0 && ` · ${audioIds.length} with audio`}
+              {readOnly && playlist.owner && ` · from ${playlist.owner}`}
             </p>
           </div>
           {audioIds.length > 0 && (
@@ -208,13 +265,15 @@ export function PlaylistDetail({ state, actions, id, script, player, onOpen, onB
                       {script === 'gu' ? k.title.en : k.title.gu}
                     </span>
                   </button>
-                  <button
-                    onClick={() => actions.togglePlaylistItem(playlist.id, kid)}
-                    aria-label="Remove from playlist"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center text-muted active:text-punch"
-                  >
-                    <X size={18} />
-                  </button>
+                  {!readOnly && (
+                    <button
+                      onClick={() => actions.togglePlaylistItem(playlist.id, kid)}
+                      aria-label="Remove from playlist"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center text-muted active:text-punch"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
                 </li>
               )
             })}
@@ -223,28 +282,76 @@ export function PlaylistDetail({ state, actions, id, script, player, onOpen, onB
       </div>
 
       <Sheet open={showActions} onClose={() => setShowActions(false)} title={playlist.name}>
-        <SheetRow
-          icon={<Pencil size={20} />}
-          onClick={() => {
-            setShowActions(false)
-            setRenaming(true)
-          }}
-        >
-          Rename playlist
-        </SheetRow>
-        <SheetRow
-          danger
-          icon={<Trash size={20} />}
-          onClick={() => {
-            if (confirm(`Delete playlist "${playlist.name}"? Kirtans themselves are kept.`)) {
-              setShowActions(false)
-              actions.deletePlaylist(playlist.id)
-              onBack()
-            }
-          }}
-        >
-          Delete playlist
-        </SheetRow>
+        {readOnly ? (
+          <>
+            <SheetRow
+              icon={<Copy size={20} />}
+              onClick={() => {
+                setShowActions(false)
+                actions.importPlaylist(playlist.name, playlist.kirtanIds)
+                alert(`“${playlist.name}” copied to My lists.`)
+              }}
+            >
+              Save a copy to My lists
+            </SheetRow>
+            <SheetRow
+              danger
+              icon={<Trash size={20} />}
+              onClick={() => {
+                setShowActions(false)
+                actions.removeSharedPlaylist(playlist.id)
+                onBack()
+              }}
+            >
+              Remove from Shared with me
+            </SheetRow>
+            {playlist.owner && (
+              <p className="px-3 pb-2 pt-1 text-xs text-muted">
+                Shared by {playlist.owner}. It updates when they change it — save a copy to make
+                it your own.
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <SheetRow icon={<ShareIcon size={20} />} onClick={shareIt}>
+              {sharedByMe ? 'Share link again' : 'Share playlist'}
+            </SheetRow>
+            {sharedByMe && (
+              <SheetRow
+                icon={<Bookmark size={20} />}
+                onClick={async () => {
+                  setShowActions(false)
+                  if (await cloud.stopSharing(playlist.id)) setSharedByMe(false)
+                }}
+              >
+                Stop sharing
+              </SheetRow>
+            )}
+            <SheetRow
+              icon={<Pencil size={20} />}
+              onClick={() => {
+                setShowActions(false)
+                setRenaming(true)
+              }}
+            >
+              Rename playlist
+            </SheetRow>
+            <SheetRow
+              danger
+              icon={<Trash size={20} />}
+              onClick={() => {
+                if (confirm(`Delete playlist "${playlist.name}"? Kirtans themselves are kept.`)) {
+                  setShowActions(false)
+                  actions.deletePlaylist(playlist.id)
+                  onBack()
+                }
+              }}
+            >
+              Delete playlist
+            </SheetRow>
+          </>
+        )}
       </Sheet>
 
       {renaming && (
@@ -258,6 +365,19 @@ export function PlaylistDetail({ state, actions, id, script, player, onOpen, onB
         />
       )}
     </div>
+  )
+}
+
+function SegTab({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`min-h-[38px] flex-1 select-none rounded-full transition-all ${
+        active ? 'bg-snow font-semibold text-night' : 'text-muted'
+      }`}
+    >
+      {children}
+    </button>
   )
 }
 

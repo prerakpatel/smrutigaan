@@ -159,6 +159,22 @@ export default function App() {
     setTab(key)
   }
 
+  // Shared-playlist deep link: opening someone's ?sp=… link files their
+  // playlist under "Shared with me" and jumps to the Playlists tab.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search).get('sp')
+    if (!sp) return
+    window.history.replaceState(window.history.state, '', window.location.pathname)
+    cloud.fetchSharedPlaylist(sp).then((snap) => {
+      if (!snap) {
+        alert('That shared playlist is no longer available.')
+        return
+      }
+      actions.addSharedPlaylist(snap)
+      setTab('playlists')
+    })
+  }, [])
+
   // line: optional lyric-line index to scroll to (search results pass the hit)
   const openKirtan = (id, line) => push({ name: 'kirtan', id, line })
   // From the player: jump to the playing kirtan's lyrics unless already there.
@@ -232,6 +248,7 @@ export default function App() {
             <PlaylistDetail
               state={state}
               actions={actions}
+              cloud={cloud}
               id={v.id}
               script={script}
               player={player}

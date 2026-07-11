@@ -47,8 +47,20 @@ function mergeUserData(local, cloud) {
     const l = annotations[id]
     if (!l || (a.updatedAt || '') >= (l.updatedAt || '')) annotations[id] = a
   }
-  return { favorites, playlists, annotations }
+  const sharedById = new Map(
+    [...(local.sharedPlaylists || []), ...(cloud.sharedPlaylists || [])].map((p) => [p.id, p])
+  )
+  return { favorites, playlists, annotations, sharedPlaylists: [...sharedById.values()] }
 }
+
+const rowToSharedSnap = (r) => ({
+  id: r.id,
+  name: r.name,
+  kirtanIds: r.kirtan_ids || [],
+  owner: r.owner_email || '',
+  ownerId: r.owner_id,
+  fetchedAt: new Date().toISOString(),
+})
 
 export function useCloud(state, actions) {
   const [session, setSession] = useState(null)
@@ -119,6 +131,7 @@ export function useCloud(state, actions) {
           favorites: state.favorites,
           playlists: state.playlists,
           annotations: state.annotations,
+          sharedPlaylists: state.sharedPlaylists,
         }
         const merged = mergeUserData(local, data?.data)
         actions.applyUserData(merged)
@@ -131,6 +144,7 @@ export function useCloud(state, actions) {
       favorites: state.favorites,
       playlists: state.playlists,
       annotations: state.annotations,
+      sharedPlaylists: state.sharedPlaylists,
     }
     const json = JSON.stringify(payload)
     if (json === lastPushed.current) return
@@ -150,7 +164,28 @@ export function useCloud(state, actions) {
         })
     }, 2000)
     return () => clearTimeout(t)
-  }, [session, state.favorites, state.playlists, state.annotations])
+  }, [session, state.favorites, state.playlists, state.annotations, state.sharedPlaylists])
+
+  // --- refresh "shared with me" snapshots on launch (they live-update) ---
+  const refreshedShared = useRef(false)
+  useEffect(() => {
+    if (refreshedShared.current || state.sharedPlaylists.length === 0) return
+    refreshedShared.current = true
+    supabase
+      .from('shared_playlists')
+      .select('*')
+      .in(
+        'id',
+        state.sharedPlaylists.map((p) => p.id)
+      )
+      .then(({ data, error }) => {
+        if (error || !data) return
+        const fresh = new Map(data.map((r) => [r.id, rowToSharedSnap(r)]))
+        actions.setSharedPlaylists(
+          state.sharedPlaylists.map((p) => fresh.get(p.id) || p)
+        )
+      })
+  }, [state.sharedPlaylists])
 
   // --- editor write-through for the shared library ---
   const pushKirtan = async (k) => {
@@ -177,6 +212,41 @@ export function useCloud(state, actions) {
     alert(`Published ${rows.length} kirtans to the cloud.`)
   }
 
+  // --- playlist sharing ---
+  const sharePlaylist = async (p) => {
+    if (!session) {
+      alert('Sign in (Settings → Account) to share playlists.')
+      return null
+    }
+    const { error } = await supabase.from('shared_playlists').upsert({
+      id: p.id,
+      owner_id: session.user.id,
+      owner_email: session.user.email,
+      name: p.name,
+      kirtan_ids: p.kirtanIds,
+      updated_at: new Date().toISOString(),
+    })
+    if (error) {
+      alert(`Could not share this playlist: ${error.message}`)
+      return null
+    }
+    return `${window.location.origin}/?sp=${p.id}`
+  }
+  const stopSharing = async (id) => {
+    const { error } = await supabase.from('shared_playlists').delete().eq('id', id)
+    if (error) alert(`Could not stop sharing: ${error.message}`)
+    return !error
+  }
+  const fetchSharedPlaylist = async (id) => {
+    const { data, error } = await supabase
+      .from('shared_playlists')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
+    if (error || !data) return null
+    return rowToSharedSnap(data)
+  }
+
   // --- sign-in / out ---
   const signInGoogle = () =>
     supabase.auth.signInWithOAuth({
@@ -199,6 +269,9 @@ export function useCloud(state, actions) {
     pushKirtan,
     removeKirtan,
     publishAll,
+    sharePlaylist,
+    stopSharing,
+    fetchSharedPlaylist,
     signInGoogle,
     signInEmail,
     signOut,

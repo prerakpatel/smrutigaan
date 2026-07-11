@@ -71,6 +71,31 @@ create policy "own data" on public.user_data
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ============================================================
+-- 3b. Shared playlists: anyone signed in can publish one of their
+--     playlists and share its link; anyone with the link can view
+--     it and save a copy. Only the owner can update or unshare.
+-- ============================================================
+create table if not exists public.shared_playlists (
+  id          text primary key,
+  owner_id    uuid not null references auth.users(id) on delete cascade,
+  owner_email text,
+  name        text not null,
+  kirtan_ids  text[] not null default '{}',
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.shared_playlists enable row level security;
+
+create policy "shared playlists readable by all" on public.shared_playlists
+  for select using (true);
+create policy "owners publish" on public.shared_playlists
+  for insert with check (auth.uid() = owner_id);
+create policy "owners update" on public.shared_playlists
+  for update using (auth.uid() = owner_id);
+create policy "owners unshare" on public.shared_playlists
+  for delete using (auth.uid() = owner_id);
+
+-- ============================================================
 -- 4. Audio storage (optional, for hosting recordings):
 --    Dashboard → Storage → New bucket → name: audio → Public bucket ON.
 --    Then run these policies so only editors can upload:
