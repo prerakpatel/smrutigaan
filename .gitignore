@@ -1,5 +1,23 @@
+# dependencies / build output
 node_modules
 dist
+
+# local env & secrets (none are needed today; keep them out if ever added)
+.env
+.env.*
 *.local
+
+# Vercel CLI project link
+.vercel
+
+# logs
+npm-debug.log*
+*.log
+
+# OS / editor noise
 .DS_Store
+.idea
+.vscode
+
+# local data snapshots
 src/data/kirtans.backup.json
