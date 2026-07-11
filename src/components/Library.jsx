@@ -1,21 +1,44 @@
 import { useMemo, useState } from 'react'
 import { buildHaystack, matchesQuery, findLineMatches } from '../lib/text'
-import { Heart, Music, SearchIcon, X, ChevronRight } from './icons'
+import Sheet from './Sheet'
+import { Check, Heart, Music, SearchIcon, X, ChevronRight } from './icons'
+
+// Canonical preset lists, in display order. Membership is category tags on
+// each kirtan, so curating a preset = tagging kirtans with its name.
+const PRESETS = [
+  'Manglacharan',
+  'Nand-pankti',
+  'Swamishree kirtan',
+  'Guruhari kirtan',
+  'Yuva kirtan',
+  'Baal kirtan',
+  'Utsav kirtan',
+  'Prarthana',
+  'Stavan',
+  'Doha-chhand',
+]
 
 export default function Library({ state, actions, script, onOpen }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [showAllPresets, setShowAllPresets] = useState(false)
 
   const haystacks = useMemo(
     () => new Map(state.kirtans.map((k) => [k.id, buildHaystack(k)])),
     [state.kirtans]
   )
 
-  const categories = useMemo(() => {
-    const set = new Set()
-    state.kirtans.forEach((k) => (k.categories || []).forEach((c) => set.add(c)))
-    return [...set].sort()
+  // Count kirtans per category tag; presets keep canonical order, any other
+  // ad-hoc tags follow alphabetically.
+  const { counts, chipList } = useMemo(() => {
+    const counts = new Map()
+    state.kirtans.forEach((k) =>
+      (k.categories || []).forEach((c) => counts.set(c, (counts.get(c) || 0) + 1))
+    )
+    const others = [...counts.keys()].filter((c) => !PRESETS.includes(c)).sort()
+    const chipList = [...PRESETS.filter((p) => counts.get(p)), ...others]
+    return { counts, chipList }
   }, [state.kirtans])
 
   const results = state.kirtans.filter((k) => {
@@ -76,9 +99,16 @@ export default function Library({ state, actions, script, onOpen }) {
           </button>
         </div>
 
-        {categories.length > 0 && (
-          <div className="no-scrollbar -mx-4 mt-2.5 flex gap-2 overflow-x-auto px-4 pb-0.5 text-[13px]">
-            {categories.map((c) => (
+        {/* Preset pills: active one first, then a scrollable row (the same
+            pattern Spotify/Apple Music use), capped by a See-all sheet. */}
+        <div className="no-scrollbar -mx-4 mt-2.5 flex gap-2 overflow-x-auto px-4 pb-0.5 text-[13px]">
+          {category && !chipList.includes(category) && (
+            <Chip active onClick={() => setCategory(null)}>
+              {category}
+            </Chip>
+          )}
+          {[...(category && chipList.includes(category) ? [category] : []), ...chipList.filter((c) => c !== category)].map(
+            (c) => (
               <Chip
                 key={c}
                 active={category === c}
@@ -86,9 +116,12 @@ export default function Library({ state, actions, script, onOpen }) {
               >
                 {c}
               </Chip>
-            ))}
-          </div>
-        )}
+            )
+          )}
+          <Chip active={false} onClick={() => setShowAllPresets(true)}>
+            See all…
+          </Chip>
+        </div>
       </div>
 
       <div className="px-4">
@@ -160,11 +193,49 @@ export default function Library({ state, actions, script, onOpen }) {
 
         {results.length === 0 && (
           <div className="mt-14 text-center text-sm text-muted">
-            <p>No kirtans match this search.</p>
-            <p className="mt-1">Try fewer words, or search in the other script.</p>
+            {category && !query ? (
+              <p>Nothing in “{category}” yet.</p>
+            ) : (
+              <>
+                <p>No kirtans match this search.</p>
+                <p className="mt-1">Try fewer words, or search in the other script.</p>
+              </>
+            )}
           </div>
         )}
       </div>
+
+      {/* All presets, as a tiled overview */}
+      <Sheet open={showAllPresets} onClose={() => setShowAllPresets(false)} title="Browse presets">
+        <div className="grid grid-cols-2 gap-2 pb-2">
+          {[...PRESETS, ...chipList.filter((c) => !PRESETS.includes(c))].map((p) => {
+            const n = counts.get(p) || 0
+            const active = category === p
+            return (
+              <button
+                key={p}
+                onClick={() => {
+                  setCategory(active ? null : p)
+                  setShowAllPresets(false)
+                }}
+                className={`flex min-h-[64px] flex-col justify-center rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
+                  active
+                    ? 'border-accent/60 bg-accent-soft'
+                    : 'border-veil/5 bg-card active:bg-night'
+                }`}
+              >
+                <span className="flex items-center gap-1.5 text-[14px] font-semibold leading-tight">
+                  {p}
+                  {active && <Check size={14} className="shrink-0 text-accent-bright" />}
+                </span>
+                <span className="mt-1 text-[11px] text-muted">
+                  {n} {n === 1 ? 'kirtan' : 'kirtans'}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </Sheet>
     </div>
   )
 }

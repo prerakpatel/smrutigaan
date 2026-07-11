@@ -48,6 +48,23 @@ export default function KirtanView({
   const [focusMode, setFocusMode] = useState(false)
   // Top bar is transparent over the hero gradient until the header scrolls away.
   const [sentinelRef, scrolled] = useScrolledPast()
+  // One-time-per-session hint, flashed as a toast at the bottom instead of
+  // occupying a permanent line in every kirtan.
+  const [showHint, setShowHint] = useState(false)
+  useEffect(() => {
+    if (sessionStorage.getItem('smruti-gaan:line-hint')) return
+    // flag inside the timeout, not at mount — StrictMode's throwaway first
+    // mount would otherwise consume the one-per-session slot
+    const show = setTimeout(() => {
+      sessionStorage.setItem('smruti-gaan:line-hint', '1')
+      setShowHint(true)
+    }, 700)
+    const hide = setTimeout(() => setShowHint(false), 6200)
+    return () => {
+      clearTimeout(show)
+      clearTimeout(hide)
+    }
+  }, [])
   // Arriving from a search result: scroll to the matched line and flash it.
   const [flashLine, setFlashLine] = useState(initialLine ?? null)
   useEffect(() => {
@@ -262,12 +279,6 @@ export default function KirtanView({
           </p>
         )}
 
-        {Object.keys(ann.lines).length === 0 && selected.length === 0 && (
-          <p className="mt-4 text-[11px] leading-relaxed text-muted">
-            Tap a line to select it — then highlight, add a note, copy or share.
-          </p>
-        )}
-
         {/* Lyrics: tapping a line only ever selects it (the floating toolbar
             acts on the selection); a line's note opens via its pencil chip.
             Annotations key off line index, shared across both scripts. */}
@@ -394,6 +405,20 @@ export default function KirtanView({
       <Sheet open={showPlaylists} onClose={() => setShowPlaylists(false)} title="Add to playlist">
         <PlaylistPicker state={state} actions={actions} kirtanId={id} />
       </Sheet>
+
+      {/* Once-per-session hint toast — rises from the bottom, fades away */}
+      <div
+        aria-hidden={!showHint}
+        className={`pointer-events-none fixed inset-x-0 bottom-[calc(18px+env(safe-area-inset-bottom,0px))] z-30 flex justify-center px-6 transition-all duration-500 ease-out ${
+          showHint && selected.length === 0
+            ? 'translate-y-0 opacity-100'
+            : 'translate-y-4 opacity-0'
+        }`}
+      >
+        <p className="rounded-full border border-veil/10 bg-card/95 px-4 py-2.5 text-center text-[12.5px] leading-snug text-muted shadow-xl backdrop-blur-xl">
+          Tap a line to select it — then highlight, note, copy or share.
+        </p>
+      </div>
 
       {/* Floating selection toolbar — appears when any lines are selected,
           docked above the tab bar (and above the mini player when active),
