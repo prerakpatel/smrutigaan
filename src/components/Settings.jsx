@@ -104,38 +104,37 @@ export default function Settings({
         <Section title="Account">
           {cloud.session ? (
             <>
-              <Row label="Signed in as">
-                <span className="max-w-44 truncate text-sm text-muted">
-                  {cloud.session.user.email}
+              <div className="flex min-h-[56px] items-center justify-between gap-3 px-4 py-2.5">
+                <span className="min-w-0">
+                  <span className="block truncate text-base">{cloud.session.user.email}</span>
+                  <span className="mt-0.5 block text-xs text-muted">
+                    {cloud.pendingCount > 0
+                      ? `${cloud.pendingCount} ${
+                          cloud.pendingCount === 1 ? 'change' : 'changes'
+                        } waiting — retries automatically`
+                      : cloud.syncedAt
+                        ? `Synced ${cloud.syncedAt.toLocaleTimeString([], {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}`
+                        : 'Sync is on'}
+                  </span>
                 </span>
-              </Row>
-              {cloud.isEditor && (
-                <Row label="Role">
-                  <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent-bright">
+                {cloud.isEditor && (
+                  <span className="shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent-bright">
                     Editor
                   </span>
-                </Row>
-              )}
-              {cloud.syncedAt && (
-                <Row label="Last synced">
-                  <span className="text-sm text-muted">
-                    {cloud.syncedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                  </span>
-                </Row>
-              )}
+                )}
+              </div>
               {cloud.isEditor && (
-                <RowButton
-                  onClick={() => {
-                    if (confirm('Publish every kirtan on this device to the shared cloud library?'))
-                      cloud.publishAll()
-                  }}
-                >
-                  Publish local library to cloud
+                <RowButton onClick={cloud.publishAll}>
+                  {cloud.publishing
+                    ? cloud.publishing.total === 0
+                      ? 'Checking for changes…'
+                      : `Syncing… ${cloud.publishing.done} of ${cloud.publishing.total}`
+                    : 'Sync library to cloud'}
                 </RowButton>
               )}
-              <RowButton danger onClick={cloud.signOut}>
-                Sign out
-              </RowButton>
             </>
           ) : (
             <>
@@ -214,9 +213,19 @@ export default function Settings({
           </p>
         </Section>
 
-        <p className="pb-4 text-center text-[11px] uppercase tracking-[0.18em] text-muted">
+        <p className="text-center text-[11px] uppercase tracking-[0.18em] text-muted">
           Smruti Gaan · Hariprabodham
         </p>
+
+        {cloud.session && (
+          <button
+            onClick={cloud.signOut}
+            className="mx-auto mb-2 block rounded-full bg-surface px-5 py-2 text-[13px] font-medium text-punch active:bg-card"
+          >
+            Sign out
+          </button>
+        )}
+        <div className="pb-4" />
       </div>
     </div>
   )

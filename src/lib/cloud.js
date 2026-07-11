@@ -62,12 +62,34 @@ const rowToSharedSnap = (r) => ({
   fetchedAt: new Date().toISOString(),
 })
 
+const PENDING_KEY = 'smruti-gaan:pending-push'
+const readPending = () => {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY)) || []
+  } catch {
+    return []
+  }
+}
+
 export function useCloud(state, actions) {
   const [session, setSession] = useState(null)
   const [isEditor, setIsEditor] = useState(() => localStorage.getItem(EDITOR_FLAG) === '1')
   const [syncedAt, setSyncedAt] = useState(null)
+  const [publishing, setPublishing] = useState(null) // {done, total} during library sync
+  const [pendingCount, setPendingCount] = useState(() => readPending().length)
   const lastPushed = useRef(null)
   const mergedForUser = useRef(null) // guards the one-time merge per sign-in
+  const stateRef = useRef(state)
+  stateRef.current = state
+
+  const writePending = (list) => {
+    try {
+      localStorage.setItem(PENDING_KEY, JSON.stringify(list))
+    } catch {}
+    setPendingCount(list.length)
+  }
+  const queuePending = (op, id) =>
+    writePending([...readPending().filter((p) => p.id !== id), { op, id }])
 
   // --- auth state ---
   useEffect(() => {
@@ -188,28 +210,93 @@ export function useCloud(state, actions) {
   }, [state.sharedPlaylists])
 
   // --- editor write-through for the shared library ---
+  // Failures never lose work: they queue and retry automatically (below).
   const pushKirtan = async (k) => {
     if (!isEditor || !session) return
+    if (!navigator.onLine) {
+      queuePending('save', k.id)
+      return
+    }
     const { error } = await supabase.from('kirtans').upsert(kirtanToRow(k))
-    if (error) alert(`Saved on this device, but the cloud save failed: ${error.message}`)
+    if (error) queuePending('save', k.id)
   }
   const removeKirtan = async (id) => {
     if (!isEditor || !session) return
+    if (!navigator.onLine) {
+      queuePending('delete', id)
+      return
+    }
     const { error } = await supabase.from('kirtans').delete().eq('id', id)
-    if (error) alert(`Deleted on this device, but the cloud delete failed: ${error.message}`)
+    if (error) queuePending('delete', id)
   }
-  // one-time bulk publish of the local library (seeding the cloud)
-  const publishAll = async () => {
-    if (!isEditor || !session) return
-    const rows = state.kirtans.map(kirtanToRow)
-    for (let i = 0; i < rows.length; i += 100) {
-      const { error } = await supabase.from('kirtans').upsert(rows.slice(i, i + 100))
-      if (error) {
-        alert(`Publish failed at ${i}: ${error.message}`)
-        return
+
+  // Retry stranded editor changes: on launch, when the connection returns,
+  // and every few minutes — the failsafe against a save that never reached
+  // the cloud.
+  const flushPending = async () => {
+    if (!isEditor || !session || !navigator.onLine) return
+    const pending = readPending()
+    if (!pending.length) return
+    const remaining = []
+    for (const p of pending) {
+      if (p.op === 'delete') {
+        const { error } = await supabase.from('kirtans').delete().eq('id', p.id)
+        if (error) remaining.push(p)
+      } else {
+        const k = stateRef.current.kirtans.find((k) => k.id === p.id)
+        if (!k) continue
+        const { error } = await supabase.from('kirtans').upsert(kirtanToRow(k))
+        if (error) remaining.push(p)
       }
     }
-    alert(`Published ${rows.length} kirtans to the cloud.`)
+    writePending(remaining)
+  }
+  useEffect(() => {
+    flushPending()
+    window.addEventListener('online', flushPending)
+    const t = setInterval(flushPending, 5 * 60 * 1000)
+    return () => {
+      window.removeEventListener('online', flushPending)
+      clearInterval(t)
+    }
+  }, [session, isEditor])
+
+  // Delta library sync: compare timestamps and push only what the cloud is
+  // missing or has older. Doubles as the manual catch-all for anything the
+  // retry queue couldn't identify.
+  const publishAll = async () => {
+    if (!isEditor || !session || publishing) return
+    setPublishing({ done: 0, total: 0 }) // "checking…" phase
+    const { data: remote, error } = await supabase.from('kirtans').select('id, updated_at')
+    if (error) {
+      setPublishing(null)
+      alert(`Could not reach the cloud: ${error.message}`)
+      return
+    }
+    const cloudMap = new Map(remote.map((r) => [r.id, r.updated_at]))
+    const changed = stateRef.current.kirtans.filter((k) => {
+      const c = cloudMap.get(k.id)
+      return !c || (k.updatedAt || '') > c
+    })
+    if (changed.length === 0) {
+      setPublishing(null)
+      alert('The cloud library is already up to date.')
+      return
+    }
+    const rows = changed.map(kirtanToRow)
+    setPublishing({ done: 0, total: rows.length })
+    for (let i = 0; i < rows.length; i += 50) {
+      const { error } = await supabase.from('kirtans').upsert(rows.slice(i, i + 50))
+      if (error) {
+        setPublishing(null)
+        alert(`Sync stopped at ${i} of ${rows.length}: ${error.message}`)
+        return
+      }
+      setPublishing({ done: Math.min(i + 50, rows.length), total: rows.length })
+    }
+    setPublishing(null)
+    setSyncedAt(new Date())
+    alert(`Synced ${rows.length} ${rows.length === 1 ? 'kirtan' : 'kirtans'} to the cloud.`)
   }
 
   // --- playlist sharing ---
@@ -266,6 +353,8 @@ export function useCloud(state, actions) {
     session,
     isEditor,
     syncedAt,
+    publishing,
+    pendingCount,
     pushKirtan,
     removeKirtan,
     publishAll,
